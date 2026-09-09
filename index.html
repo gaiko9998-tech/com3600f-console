@@ -356,7 +356,6 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
   <button class="btn stop" id="btnStop" disabled>정지</button>
   <button class="btn" id="btnSave" disabled>저장</button>
   <button class="btn" id="btnOpen">파일 열기</button>
-  <button class="btn" id="btnCap">화면 저장</button>
   <button class="btn" id="btnSess">보관함</button>
 </footer>
 
@@ -372,7 +371,7 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
       <button type="button" role="tab" data-tab="meas" aria-selected="false">측정</button>
       <button type="button" role="tab" data-tab="graph" aria-selected="false">그래프</button>
       <button type="button" role="tab" data-tab="store" aria-selected="false">보존</button>
-      <button type="button" role="tab" data-tab="rep" aria-selected="false">리포트</button>
+      <button type="button" role="tab" data-tab="rep" aria-selected="false">기록</button>
     </div>
 
     <section class="tabpane on" data-pane="conn">
@@ -436,28 +435,17 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
 
     <section class="tabpane" data-pane="store">
       <label class="chkrow"><input type="checkbox" id="setAutoSave">측정이 끝나면 보관함에 자동으로 넣기</label>
-      <div class="field"><label for="setFmt">기본 저장 형식</label>
-        <select id="setFmt">
-          <option value="raw">원본 형식 (.txt) — 기존 프로그램과 동일</option>
-          <option value="csv">표 형식 (.csv)</option>
-          <option value="report">한글 리포트 (.txt)</option>
-        </select></div>
+      <p class="note">저장 형식은 <b>원본 `.txt` 한 가지</b>입니다. 원본 프로그램도 측정 데이터는 이 형식만 다뤘습니다.</p>
       <p class="note">보관함은 태블릿 안에 저장되므로 인터넷이 없어도 유지됩니다. 최근 40건까지 보관하며, 그보다 오래된 것은 밀려납니다. 중요한 측정은 그날 안에 내려받아 두세요.</p>
       <div class="diag" id="storeInfo"></div>
     </section>
 
     <section class="tabpane" data-pane="rep">
-      <div class="field"><label for="setTitle">리포트 제목</label><input id="setTitle" placeholder="예) 괴산연습림 대기 음이온 조사"></div>
       <div class="row2">
         <div class="field"><label for="setName">조사자명</label><input id="setName"></div>
         <div class="field"><label for="setSite">측정장소</label><input id="setSite"></div>
       </div>
-      <div class="field"><label for="setMemo">코멘트</label><textarea id="setMemo"></textarea></div>
-      <div class="row2">
-        <div class="field"><label for="setMemo1">메모 1</label><input id="setMemo1"></div>
-        <div class="field"><label for="setMemo2">메모 2</label><input id="setMemo2"></div>
-      </div>
-      <p class="note">조사자명과 측정장소는 한글 리포트의 <b>조사자명</b> 칸에 들어갑니다.</p>
+      <p class="note">보관함 목록에서 어느 측정인지 구분하는 데 쓰입니다. 원본 <b>.txt</b>에는 들어가지 않습니다 — 그 형식에 조사자·장소 칸이 없기 때문이며, 억지로 넣으면 기존 파일과 형식이 어긋납니다.</p>
     </section>
   </div>
   <div class="dlg-foot">
@@ -472,15 +460,7 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
   <div class="dlg-head"><h2>측정 결과 저장</h2></div>
   <div class="dlg-body">
     <div class="diag" id="saveSummary"></div>
-    <div class="field">
-      <label for="saveFmt">저장 형식</label>
-      <select id="saveFmt">
-        <option value="raw">원본 형식 (.txt) — 기존 프로그램과 동일</option>
-        <option value="csv">표 형식 (.csv) — 엑셀 바로 열기</option>
-        <option value="report">한글 리포트 (.txt) — 조사일자·조사자명 표</option>
-      </select>
-    </div>
-    <p class="note" id="saveNote"></p>
+    <p class="note">기존 노트북 프로그램이 만들던 <b>원본 형식(.txt)</b> 그대로 저장합니다. 헤더·본문·꼬리말 구성과 글자 수가 모두 같아서 지금 쓰시는 분석 절차를 그대로 이어가실 수 있습니다.</p>
   </div>
   <div class="dlg-foot"><button class="btn" data-close>닫기</button><button class="btn primary" id="doSave">내려받기</button></div>
 </dialog>
@@ -531,7 +511,7 @@ const state = {
   tag: "M1-",
   range: null,
   statPol: "-",
-  meta: { name: "", site: "", memo: "", cmd: "" },
+  meta: { name: "", site: "", cmd: "" },
   baud: 19200,
   scale: "auto",
 };
@@ -544,8 +524,8 @@ const DEFAULTS = {
   scale: "auto", xstart: "0", themeCol: true,
   colIon: "#0E6E52", colOndo: "#2C5E8F", colSitudo: "#B4690E",
   avgLine: true, grid: true,
-  autoSave: true, fmt: "raw",
-  title: "", name: "", site: "", memo: "", memo1: "", memo2: "",
+  autoSave: true,
+  name: "", site: "",
 };
 const cfg = Object.assign({}, DEFAULTS);
 
@@ -553,9 +533,8 @@ function syncFromCfg() {
   state.target = Math.max(1, cfg.count | 0);
   state.baud = cfg.baud;
   state.scale = cfg.scale;
-  state.meta = { name: cfg.name, site: cfg.site, memo: cfg.memo, cmd: cfg.cmd };
+  state.meta = { name: cfg.name, site: cfg.site, cmd: cfg.cmd };
   $("#scaleSel").value = cfg.scale;
-  $("#saveFmt").value = cfg.fmt;
 }
 function loadPrefs() {
   try {
@@ -564,7 +543,7 @@ function loadPrefs() {
     // 이전 버전에서 저장한 값도 이어받는다
     if (j.target) cfg.count = j.target;
     if (j.baud) cfg.baud = j.baud;
-    if (j.meta) { cfg.name = j.meta.name || cfg.name; cfg.site = j.meta.site || cfg.site; cfg.memo = j.meta.memo || cfg.memo; cfg.cmd = j.meta.cmd || cfg.cmd; }
+    if (j.meta) { cfg.name = j.meta.name || cfg.name; cfg.site = j.meta.site || cfg.site; cfg.cmd = j.meta.cmd || cfg.cmd; }
     if (j.hum) $("#humIn").value = j.hum;
     if (j.theme) document.documentElement.setAttribute("data-theme", j.theme);
   } catch (e) { /* 저장소를 못 쓰는 환경 — 기본값으로 진행 */ }
@@ -1041,29 +1020,6 @@ function buildRaw() {
   const foot = `"[ondo=${ondo} situdo=${situdo} ampm=${state.tag} wCnt=${state.samples.length}]"`;
   return [head, ...state.samples.map((s) => `"${formatLine(s)}"`), foot].join("\r\n") + "\r\n";
 }
-function buildCsv() {
-  const rows = [["순번", "시각", "음이온(개/cm³)", "기온(℃)", "모드", "비고"]];
-  state.samples.forEach((s, i) => rows.push([
-    i + 1,
-    s.t ? `${pad(s.t.getHours())}:${pad(s.t.getMinutes())}:${pad(s.t.getSeconds())}` : "",
-    s.over ? "" : s.ion, s.temp.toFixed(3), s.tag, s.over ? "측정범위 초과" : "",
-  ]));
-  return "﻿" + rows.map((r) => r.join(",")).join("\r\n") + "\r\n";
-}
-function buildReport() {
-  const d = state.startedAt || new Date();
-  const day = `${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-  const end = new Date(d.getTime() + state.samples.length * 1000);
-  const endS = `${end.getHours()}${pad(end.getMinutes())}${pad(end.getSeconds())}`;
-  const situdo = ($("#humIn").value || "0").replace(/\D/g, "") || "0";
-  const tail = `[ondo=${state.samples.length ? state.samples[state.samples.length - 1].temp.toFixed(1) : "0"} situdo=${situdo} ampm=${state.tag} wCnt=${state.samples.length}]`;
-  const rows = [["조사일자", "조사자명", "조사종료시간", "음이온발생량", "기온", "비고"].join("\t")];
-  state.samples.forEach((s) => rows.push([
-    day + " ", state.meta.name || state.meta.site || "", endS,
-    s.over ? "" : s.ion, s.temp.toFixed(3), tail,
-  ].join("\t")));
-  return "﻿" + rows.join("\r\n") + "\r\n";
-}
 
 async function download(filename, data) {
   const dl = await claudeCap("downloads");
@@ -1150,9 +1106,8 @@ const FIELDS = [
   ["setScale", "scale", "s"], ["setXstart", "xstart", "s"], ["setThemeCol", "themeCol", "b"],
   ["colIon", "colIon", "s"], ["colOndo", "colOndo", "s"], ["colSitudo", "colSitudo", "s"],
   ["setAvgLine", "avgLine", "b"], ["setGrid", "grid", "b"],
-  ["setAutoSave", "autoSave", "b"], ["setFmt", "fmt", "s"],
-  ["setTitle", "title", "s"], ["setName", "name", "s"], ["setSite", "site", "s"],
-  ["setMemo", "memo", "s"], ["setMemo1", "memo1", "s"], ["setMemo2", "memo2", "s"],
+  ["setAutoSave", "autoSave", "b"],
+  ["setName", "name", "s"], ["setSite", "site", "s"],
 ];
 function fillForm(src) {
   for (const [id, key, t] of FIELDS) {
@@ -1207,60 +1162,6 @@ $("#setupSave").addEventListener("click", () => {
   toast("환경설정을 적용했습니다");
 });
 
-/* ---------- 화면 저장 ---------- */
-// 계측 화면을 한 장의 그림으로 남긴다 (원본 프로그램의 Capture 기능)
-$("#btnCap").addEventListener("click", async () => {
-  const W = 1240, H = 780, P = 44;
-  const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const g = c.getContext("2d");
-  const bg = cssVar("--surface"), ink = cssVar("--ink"), mut = cssVar("--muted");
-  const acc = cfg.themeCol ? cssVar("--accent") : cfg.colIon;
-  g.fillStyle = cssVar("--ground"); g.fillRect(0, 0, W, H);
-  g.fillStyle = bg; g.fillRect(P, P, W - P * 2, H - P * 2);
-  g.strokeStyle = cssVar("--line"); g.strokeRect(P + .5, P + .5, W - P * 2, H - P * 2);
-  g.fillStyle = acc; g.fillRect(P, P, 5, H - P * 2);
-
-  const d = state.startedAt || new Date();
-  g.textBaseline = "top"; g.textAlign = "left";
-  g.fillStyle = ink; g.font = '700 26px "IBM Plex Sans KR", sans-serif';
-  g.fillText(cfg.title || "대기 음이온 측정", P + 30, P + 26);
-  g.fillStyle = mut; g.font = '400 15px "IBM Plex Sans KR", sans-serif';
-  const head = [cfg.site && `장소 ${cfg.site}`, cfg.name && `조사자 ${cfg.name}`,
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    `${state.samples.length.toLocaleString("ko-KR")}샘플`].filter(Boolean).join("   ·   ");
-  g.fillText(head, P + 30, P + 62);
-
-  const cells = [
-    ["음이온 평균", $("#stAvg").textContent, "개/cm³"],
-    ["최소", $("#stMin").textContent, ""], ["최대", $("#stMax").textContent, ""],
-    ["표준편차", $("#stSd").textContent, ""],
-    ["기온", $("#tempVal").textContent.replace(/\s+/g, " ").trim(), ""],
-    ["습도", ($("#humIn").value || "-") + " %", ""],
-  ];
-  const cw = (W - P * 2 - 60) / cells.length;
-  cells.forEach((cell, i) => {
-    const x = P + 30 + cw * i, y = P + 108;
-    g.fillStyle = mut; g.font = '600 12px "IBM Plex Sans Condensed", sans-serif';
-    g.fillText(cell[0], x, y);
-    g.fillStyle = i === 0 ? acc : ink;
-    g.font = (i === 0 ? '600 34px ' : '500 25px ') + '"IBM Plex Mono", monospace';
-    g.fillText(cell[1], x, y + 20);
-    if (cell[2]) {
-      g.fillStyle = mut; g.font = '400 12px "IBM Plex Sans KR", sans-serif';
-      g.fillText(cell[2], x, y + 60);
-    }
-  });
-
-  g.drawImage(cv, P + 30, P + 200, W - P * 2 - 60, H - P * 2 - 268);
-  if (cfg.memo || cfg.memo1 || cfg.memo2) {
-    g.fillStyle = mut; g.font = '400 13px "IBM Plex Sans KR", sans-serif';
-    g.fillText([cfg.memo, cfg.memo1, cfg.memo2].filter(Boolean).join("   ·   ").slice(0, 120), P + 30, H - P - 34);
-  }
-  const blob = await new Promise((r) => c.toBlob(r, "image/png"));
-  await download(`${fileStamp(d)}_화면.png`, blob);
-});
-
 $("#polSeg").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-pol]"); if (!b) return;
   state.statPol = b.dataset.pol; render();
@@ -1287,24 +1188,11 @@ $("#btnSave").addEventListener("click", () => {
     <div><span>평균 음이온</span><b>${avg.toLocaleString("ko-KR")} 개/cm³</b></div>
     <div><span>측정범위 초과</span><b>${state.samples.filter((s) => s.over).length}개</b></div>
     <div><span>파일명</span><b>${fileStamp(state.startedAt || new Date())}.txt</b></div>`;
-  updateSaveNote();
   $("#dlgSave").showModal();
 });
-function updateSaveNote() {
-  const v = $("#saveFmt").value;
-  $("#saveNote").textContent = v === "raw"
-    ? "기존 노트북 프로그램이 만들던 파일과 글자 하나까지 같은 형식입니다. 헤더·본문·꼬리말 모두 포함되어 기존 분석 절차를 그대로 쓸 수 있습니다."
-    : v === "csv"
-      ? "순번·시각·음이온·기온을 표로 저장합니다. 엑셀에서 바로 열립니다."
-      : "조사일자·조사자명·조사종료시간·음이온발생량·기온·비고 6칸 한글 표입니다. 기존 가공 파일과 같은 구성입니다.";
-}
-$("#saveFmt").addEventListener("change", updateSaveNote);
 $("#doSave").addEventListener("click", async () => {
   const stamp = fileStamp(state.startedAt || new Date());
-  const v = $("#saveFmt").value;
-  if (v === "raw") await download(`${stamp}.txt`, buildRaw());
-  else if (v === "csv") await download(`${stamp}.csv`, buildCsv());
-  else await download(`${stamp}_리포트.txt`, buildReport());
+  await download(`${stamp}.txt`, buildRaw());
   $("#dlgSave").close();
 });
 
