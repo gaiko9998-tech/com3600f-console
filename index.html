@@ -69,8 +69,6 @@ button{font-family:inherit;font-size:inherit;color:inherit}
 .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .pill.live{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 .pill.live .dot{background:var(--accent);animation:beat 1s ease-in-out infinite}
-.pill.demo{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
-.pill.demo .dot{background:var(--warn)}
 @keyframes beat{0%,100%{opacity:1}50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.pill.live .dot{animation:none}}
 .clockbox{display:flex;gap:16px;margin-left:auto;align-items:center;flex-wrap:wrap}
@@ -258,12 +256,11 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
     <b>COM-3600F 필드 콘솔</b>
     <span>대기 음이온 측정 · 갤럭시탭 단독 운용</span>
   </div>
-  <span class="pill demo" id="statusPill"><i class="dot"></i><span id="statusText">데모 재생 중</span></span>
+  <span class="pill" id="statusPill"><i class="dot"></i><span id="statusText">미연결</span></span>
   <div class="clockbox">
     <div class="kv"><span class="eyebrow">접속 시간</span><b id="connTime">00:00:00</b></div>
     <button class="iconbtn" id="btnDiag">진단</button>
     <button class="iconbtn" id="btnSetup">환경설정</button>
-    <button class="iconbtn" id="btnTheme" title="밝게/어둡게">◐</button>
   </div>
 </header>
 
@@ -275,7 +272,7 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
         <span class="eyebrow" id="sampleClock">--:--:--</span>
       </div>
       <div class="readout">
-        <span id="ionVal">0</span>
+        <span id="ionVal">—</span>
         <span class="unit">개 / cm³</span>
       </div>
       <div class="chips">
@@ -306,10 +303,10 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><span class="eyebrow">최소</span><b id="stMin">0</b></div>
-        <div class="stat"><span class="eyebrow">최대</span><b id="stMax">0</b></div>
-        <div class="stat"><span class="eyebrow">평균</span><b id="stAvg">0</b></div>
-        <div class="stat"><span class="eyebrow">표준편차</span><b id="stSd">0</b></div>
+        <div class="stat"><span class="eyebrow">최소</span><b id="stMin">—</b></div>
+        <div class="stat"><span class="eyebrow">최대</span><b id="stMax">—</b></div>
+        <div class="stat"><span class="eyebrow">평균</span><b id="stAvg">—</b></div>
+        <div class="stat"><span class="eyebrow">표준편차</span><b id="stSd">—</b></div>
       </div>
     </div>
   </div>
@@ -375,18 +372,12 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
     </div>
 
     <section class="tabpane on" data-pane="conn">
-      <div class="field"><label for="setLink">측정기 접속 형태</label>
-        <select id="setLink">
-          <option value="usb">USB 변환기 (FTDI) — 태블릿 표준</option>
-          <option value="serial">직결 시리얼 (RS-232C)</option>
-          <option value="lan">이더넷 (LAN)</option>
-        </select></div>
+      <p class="note">접속은 <b>USB 변환기(FTDI)</b> 한 가지입니다. 원본 프로그램에 있던 직결 시리얼·이더넷은 태블릿에서 쓸 수 없어 뺐습니다.</p>
       <div class="field"><label for="setBaud">통신 속도 (bps)</label>
         <select id="setBaud"><option>19200</option><option>9600</option><option>38400</option><option>57600</option><option>115200</option></select></div>
       <div class="field"><label for="setCmd">측정 시작 명령 (선택)</label>
         <input id="setCmd" class="num" placeholder="비워두면 장비가 보내는 값을 그대로 수신"></div>
       <p class="note">장비가 켜지면 스스로 값을 흘려보내는 방식이면 명령란은 비워두세요. 별도 시작 명령이 필요하면 여기에 넣습니다. 줄바꿈은 <b>\r</b>, <b>\n</b>으로 씁니다.<br>장비 기본값은 <b>19200 bps · 8데이터 · 패리티 없음 · 1정지비트</b>, 초당 1샘플입니다.</p>
-      <p class="note" id="lanNote" hidden><b>이더넷은 이 태블릿에서 쓸 수 없습니다.</b> 브라우저는 임의의 TCP 접속을 열 수 없어, LAN 접속은 노트북 프로그램에서만 가능합니다. USB 변환기를 쓰세요.</p>
     </section>
 
     <section class="tabpane" data-pane="meas">
@@ -403,7 +394,6 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
       <p class="note" id="countNote"></p>
       <label class="chkrow"><input type="checkbox" id="setRangeTrack">레인지가 바뀌면 새 범위로 이어서 그리기</label>
       <label class="chkrow"><input type="checkbox" id="setOverWarn">측정범위 초과(<b>****</b>) 발생 시 경고 표시</label>
-      <label class="chkrow"><input type="checkbox" id="setBuzz">측정이 끝나면 진동으로 알리기</label>
       <label class="chkrow"><input type="checkbox" id="setWake">측정 중 화면이 꺼지지 않게 하기</label>
     </section>
 
@@ -430,14 +420,12 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
           <label class="sw"><input type="color" id="colSitudo"> 습도</label>
         </div></div>
       <label class="chkrow"><input type="checkbox" id="setAvgLine">평균선 표시</label>
-      <label class="chkrow"><input type="checkbox" id="setGrid">격자 표시</label>
     </section>
 
     <section class="tabpane" data-pane="store">
       <label class="chkrow"><input type="checkbox" id="setAutoSave">측정이 끝나면 보관함에 자동으로 넣기</label>
       <p class="note">저장 형식은 <b>원본 `.txt` 한 가지</b>입니다. 원본 프로그램도 측정 데이터는 이 형식만 다뤘습니다.</p>
       <p class="note">보관함은 태블릿 안에 저장되므로 인터넷이 없어도 유지됩니다. 최근 40건까지 보관하며, 그보다 오래된 것은 밀려납니다. 중요한 측정은 그날 안에 내려받아 두세요.</p>
-      <div class="diag" id="storeInfo"></div>
     </section>
 
     <section class="tabpane" data-pane="rep">
@@ -502,7 +490,7 @@ const $ = (s) => document.querySelector(s);
 const LS = "com3600f.v1";
 
 const state = {
-  mode: "demo",            // demo | idle | connected | measuring
+  mode: "idle",            // idle | connected | measuring
   samples: [],             // {t:Date, ion:number|null, temp:number, tag:string, raw:string}
   target: 900,
   startedAt: null,
@@ -519,11 +507,11 @@ const state = {
 /* ---------- 환경설정 ---------- */
 // 원본 프로그램의 환경설정(mnu_envSet) 항목을 그대로 옮겼다.
 const DEFAULTS = {
-  link: "usb", baud: 19200, cmd: "",
-  count: 900, pol: "auto", rangeTrack: true, overWarn: true, buzz: true, wake: true,
+  baud: 19200, cmd: "",
+  count: 900, pol: "auto", rangeTrack: true, overWarn: true, wake: true,
   scale: "auto", xstart: "0", themeCol: true,
   colIon: "#0E6E52", colOndo: "#2C5E8F", colSitudo: "#B4690E",
-  avgLine: true, grid: true,
+  avgLine: true,
   autoSave: true,
   name: "", site: "",
 };
@@ -545,7 +533,6 @@ function loadPrefs() {
     if (j.baud) cfg.baud = j.baud;
     if (j.meta) { cfg.name = j.meta.name || cfg.name; cfg.site = j.meta.site || cfg.site; cfg.cmd = j.meta.cmd || cfg.cmd; }
     if (j.hum) $("#humIn").value = j.hum;
-    if (j.theme) document.documentElement.setAttribute("data-theme", j.theme);
   } catch (e) { /* 저장소를 못 쓰는 환경 — 기본값으로 진행 */ }
   syncFromCfg();
 }
@@ -553,7 +540,6 @@ function savePrefs() {
   try {
     localStorage.setItem(LS, JSON.stringify({
       cfg, hum: $("#humIn").value,
-      theme: document.documentElement.getAttribute("data-theme") || "",
     }));
   } catch (e) {}
 }
@@ -786,7 +772,7 @@ function render() {
     $("#stAvg").textContent = Math.round(avg).toLocaleString("ko-KR");
     $("#stSd").textContent = Math.round(Math.sqrt(ss / vals.length)).toLocaleString("ko-KR");
   } else {
-    ["#stMin", "#stMax", "#stAvg", "#stSd"].forEach((k) => { $(k).textContent = "0"; });
+    ["#stMin", "#stMax", "#stAvg", "#stSd"].forEach((k) => { $(k).textContent = "—"; });
   }
   const n = state.samples.length;
   $("#mCount").textContent = n.toLocaleString("ko-KR");
@@ -834,10 +820,8 @@ function drawChart() {
   ctx.textBaseline = "middle";
   for (let i = 0; i <= 4; i++) {
     const y = padT + (ih * i) / 4;
-    if (cfg.grid || i === 4) {
-      ctx.strokeStyle = line; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
-    }
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
     ctx.fillStyle = muted; ctx.textAlign = "right";
     ctx.fillText(Math.round(top * (1 - i / 4)).toLocaleString("ko-KR"), padL - 7, y);
   }
@@ -912,39 +896,11 @@ function drawChart() {
 }
 window.addEventListener("resize", drawChart);
 
-/* ---------- 데모 재생 ---------- */
-// 장비가 없어도 화면이 어떻게 동작하는지 보이도록 합성 데이터를 흘려보낸다. 실제 측정값이 아니다.
-let demoTimer = null, demoI = 0;
-function startDemo() {
-  state.mode = "demo";
-  setStatus("demo", "데모 재생 중 (합성 데이터)");
-  let temp = 12.4, base = 620;
-  demoTimer = setInterval(() => {
-    demoI++;
-    temp += (18.5 - temp) * 0.004 + (Math.random() - .5) * 0.06;
-    base += (Math.sin(demoI / 47) * 260 + 700 - base) * 0.05 + (Math.random() - .5) * 90;
-    const ion = Math.max(0, Math.round(base + Math.sin(demoI / 7) * 45));
-    const over = ion > 9990;
-    handleLine(`M1-${over ? "****" : String(ion).padStart(4, " ")}${temp < 0 ? "-" : " "}${Math.abs(temp).toFixed(3).padStart(6, " ")}`);
-    if (state.mode === "demo") { state.samples.push(lastLive); render(); }
-    if (state.samples.length > 260) stopDemo();
-  }, 120);
-}
-function stopDemo() { clearInterval(demoTimer); demoTimer = null; }
-function clearDemo() {
-  if (state.mode === "demo") { stopDemo(); state.samples = []; rawLines.length = 0; lastLive = null; demoI = 0; }
-}
-
 /* ---------- 연결 · 측정 ---------- */
 let connTimer = null;
 async function connect() {
   if (ftdi.connected) { await disconnect(); return; }
-  if (cfg.link === "lan") {
-    toast("이더넷 접속은 태블릿에서 쓸 수 없습니다 — 환경설정에서 USB 변환기를 고르세요");
-    return;
-  }
   try {
-    clearDemo();
     setStatus("", "연결 중…");
     const name = await ftdi.open(state.baud);
     state.mode = "connected";
@@ -1003,7 +959,6 @@ function finishMeasure(why) {
       lines: state.samples.map(formatLine),
     });
   }
-  if (cfg.buzz && navigator.vibrate) navigator.vibrate([120, 70, 120]);
   updateWake();
   toast(why || "측정을 마쳤습니다");
 }
@@ -1056,7 +1011,6 @@ $("#fileIn").addEventListener("change", async (e) => {
   let txt;
   try { txt = new TextDecoder("euc-kr").decode(buf); }
   catch (err) { txt = new TextDecoder("utf-8").decode(buf); }
-  clearDemo(); stopDemo();
   state.samples = []; rawLines.length = 0; state.dropped = 0; lastLive = null;
   const lines = txt.split(/\r?\n/);
   let base = null;
@@ -1099,13 +1053,13 @@ document.querySelectorAll("[data-close]").forEach((b) =>
 
 /* ---------- 환경설정 화면 ---------- */
 const FIELDS = [
-  ["setLink", "link", "s"], ["setBaud", "baud", "i"], ["setCmd", "cmd", "s"],
+  ["setBaud", "baud", "i"], ["setCmd", "cmd", "s"],
   ["setCount", "count", "i"], ["setPol", "pol", "s"],
   ["setRangeTrack", "rangeTrack", "b"], ["setOverWarn", "overWarn", "b"],
-  ["setBuzz", "buzz", "b"], ["setWake", "wake", "b"],
+  ["setWake", "wake", "b"],
   ["setScale", "scale", "s"], ["setXstart", "xstart", "s"], ["setThemeCol", "themeCol", "b"],
   ["colIon", "colIon", "s"], ["colOndo", "colOndo", "s"], ["colSitudo", "colSitudo", "s"],
-  ["setAvgLine", "avgLine", "b"], ["setGrid", "grid", "b"],
+  ["setAvgLine", "avgLine", "b"],
   ["setAutoSave", "autoSave", "b"],
   ["setName", "name", "s"], ["setSite", "site", "s"],
 ];
@@ -1126,15 +1080,9 @@ function readForm() {
   cfg.count = Math.max(1, cfg.count);
 }
 function refreshSetupUi() {
-  $("#lanNote").hidden = $("#setLink").value !== "lan";
   $("#colField").hidden = $("#setThemeCol").checked;
   const n = parseInt($("#setCount").value, 10) || 0;
   $("#countNote").textContent = n ? `초당 1샘플 기준 약 ${mmss(n)} 걸립니다.` : "";
-  let used = 0;
-  try { used = (localStorage.getItem(LS + ".sessions") || "").length; } catch (e) {}
-  $("#storeInfo").innerHTML =
-    `<div><span>보관된 측정</span><b>${loadSessions().length}건</b></div>` +
-    `<div><span>차지한 용량</span><b>${(used / 1024).toFixed(0)} KB</b></div>`;
 }
 function applyCfg() {
   $("#humIn").style.color = cfg.themeCol ? "" : cfg.colSitudo;
@@ -1248,13 +1196,6 @@ $("#scaleSel").addEventListener("change", (e) => {
   state.scale = cfg.scale = e.target.value; savePrefs(); drawChart();
 });
 $("#humIn").addEventListener("change", savePrefs);
-$("#btnTheme").addEventListener("click", () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const next = cur === "dark" ? "light" : cur === "light" ? "" : "dark";
-  if (next) document.documentElement.setAttribute("data-theme", next);
-  else document.documentElement.removeAttribute("data-theme");
-  savePrefs(); drawChart();
-});
 if (navigator.usb) {
   navigator.usb.addEventListener("disconnect", () => { if (ftdi.connected) disconnect(); });
 }
@@ -1263,5 +1204,4 @@ if (navigator.usb) {
 loadPrefs();
 applyCfg();
 render();
-startDemo();
 </script>
