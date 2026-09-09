@@ -217,6 +217,32 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
 .sess .meta b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:500}
 .sess .meta span{font-size:12px;color:var(--muted)}
 
+/* 환경설정 탭 */
+.tabs{display:flex;gap:4px;background:var(--sunken);border:1px solid var(--line);
+  border-radius:9px;padding:4px;flex-wrap:wrap}
+.tabs button{
+  flex:1 1 auto;min-width:70px;border:none;background:transparent;padding:8px 10px;
+  border-radius:6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;
+}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--accent-ink);box-shadow:var(--shadow)}
+.tabpane{display:none;flex-direction:column;gap:13px}
+.tabpane.on{display:flex}
+.swatches{display:flex;gap:14px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2)}
+.sw input[type=color]{
+  width:36px;height:30px;border:1px solid var(--line-2);border-radius:6px;
+  background:var(--ground);padding:2px;cursor:pointer;flex:none;
+}
+.chkrow{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:1.45;cursor:pointer}
+.chkrow input{width:19px;height:19px;accent-color:var(--accent);flex:none;margin:0}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:7px;overflow:hidden}
+.seg button{
+  border:none;background:var(--surface-2);padding:5px 12px;font-size:12.5px;
+  font-weight:600;color:var(--muted);cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.statshead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+
 /* toast */
 #toast{
   position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(8px);
@@ -236,7 +262,7 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
   <div class="clockbox">
     <div class="kv"><span class="eyebrow">접속 시간</span><b id="connTime">00:00:00</b></div>
     <button class="iconbtn" id="btnDiag">진단</button>
-    <button class="iconbtn" id="btnSetup">설정</button>
+    <button class="iconbtn" id="btnSetup">환경설정</button>
     <button class="iconbtn" id="btnTheme" title="밝게/어둡게">◐</button>
   </div>
 </header>
@@ -271,11 +297,20 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
       </div>
     </div>
 
-    <div class="stats">
-      <div class="stat"><span class="eyebrow">최소</span><b id="stMin">0</b></div>
-      <div class="stat"><span class="eyebrow">최대</span><b id="stMax">0</b></div>
-      <div class="stat"><span class="eyebrow">평균</span><b id="stAvg">0</b></div>
-      <div class="stat"><span class="eyebrow">표준편차</span><b id="stSd">0</b></div>
+    <div class="card flat">
+      <div class="statshead">
+        <span class="eyebrow" id="statsLabel">측정 통계 · 음이온</span>
+        <div class="seg" id="polSeg" hidden>
+          <button type="button" data-pol="-" aria-pressed="true">음(−)</button>
+          <button type="button" data-pol="+" aria-pressed="false">양(+)</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="eyebrow">최소</span><b id="stMin">0</b></div>
+        <div class="stat"><span class="eyebrow">최대</span><b id="stMax">0</b></div>
+        <div class="stat"><span class="eyebrow">평균</span><b id="stAvg">0</b></div>
+        <div class="stat"><span class="eyebrow">표준편차</span><b id="stSd">0</b></div>
+      </div>
     </div>
   </div>
 
@@ -321,35 +356,115 @@ dialog::backdrop{background:rgba(10,18,15,.5)}
   <button class="btn stop" id="btnStop" disabled>정지</button>
   <button class="btn" id="btnSave" disabled>저장</button>
   <button class="btn" id="btnOpen">파일 열기</button>
+  <button class="btn" id="btnCap">화면 저장</button>
   <button class="btn" id="btnSess">보관함</button>
 </footer>
 
 <input type="file" id="fileIn" accept=".txt" hidden>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<!-- 설정 -->
+<!-- 환경설정 -->
 <dialog id="dlgSetup">
-  <div class="dlg-head"><h2>측정 설정</h2></div>
+  <div class="dlg-head"><h2>환경설정</h2></div>
   <div class="dlg-body">
-    <div class="row2">
-      <div class="field"><label for="setCount">측정 샘플 수 (wCnt)</label>
-        <input id="setCount" class="num" inputmode="numeric" value="900"></div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="conn" aria-selected="true">접속</button>
+      <button type="button" role="tab" data-tab="meas" aria-selected="false">측정</button>
+      <button type="button" role="tab" data-tab="graph" aria-selected="false">그래프</button>
+      <button type="button" role="tab" data-tab="store" aria-selected="false">보존</button>
+      <button type="button" role="tab" data-tab="rep" aria-selected="false">리포트</button>
+    </div>
+
+    <section class="tabpane on" data-pane="conn">
+      <div class="field"><label for="setLink">측정기 접속 형태</label>
+        <select id="setLink">
+          <option value="usb">USB 변환기 (FTDI) — 태블릿 표준</option>
+          <option value="serial">직결 시리얼 (RS-232C)</option>
+          <option value="lan">이더넷 (LAN)</option>
+        </select></div>
       <div class="field"><label for="setBaud">통신 속도 (bps)</label>
         <select id="setBaud"><option>19200</option><option>9600</option><option>38400</option><option>57600</option><option>115200</option></select></div>
-    </div>
-    <p class="note">장비 기본값은 <b>19200 bps · 8데이터 · 패리티 없음 · 1정지비트</b>, 초당 1샘플입니다. 900샘플이 정확히 15분입니다.</p>
-    <div class="row2">
-      <div class="field"><label for="setName">조사자명</label><input id="setName" value=""></div>
-      <div class="field"><label for="setSite">조사장소</label><input id="setSite" value=""></div>
-    </div>
-    <div class="field"><label for="setMemo">비고</label><textarea id="setMemo"></textarea></div>
-    <div class="field">
-      <label for="setCmd">측정 시작 명령 (선택)</label>
-      <input id="setCmd" class="num" placeholder="비워두면 장비가 보내는 값을 그대로 수신">
-      <p class="note">장비가 전원을 켜면 스스로 값을 흘려보내는 방식이면 비워두세요. 별도 시작 명령이 필요한 장비라면 여기에 넣으면 연결 직후 한 번 전송합니다. <code>\r</code>, <code>\n</code> 표기를 씁니다.</p>
-    </div>
+      <div class="field"><label for="setCmd">측정 시작 명령 (선택)</label>
+        <input id="setCmd" class="num" placeholder="비워두면 장비가 보내는 값을 그대로 수신"></div>
+      <p class="note">장비가 켜지면 스스로 값을 흘려보내는 방식이면 명령란은 비워두세요. 별도 시작 명령이 필요하면 여기에 넣습니다. 줄바꿈은 <b>\r</b>, <b>\n</b>으로 씁니다.<br>장비 기본값은 <b>19200 bps · 8데이터 · 패리티 없음 · 1정지비트</b>, 초당 1샘플입니다.</p>
+      <p class="note" id="lanNote" hidden><b>이더넷은 이 태블릿에서 쓸 수 없습니다.</b> 브라우저는 임의의 TCP 접속을 열 수 없어, LAN 접속은 노트북 프로그램에서만 가능합니다. USB 변환기를 쓰세요.</p>
+    </section>
+
+    <section class="tabpane" data-pane="meas">
+      <div class="row2">
+        <div class="field"><label for="setCount">측정 샘플 수 (wCnt)</label>
+          <input id="setCount" class="num" inputmode="numeric"></div>
+        <div class="field"><label for="setPol">측정 극성</label>
+          <select id="setPol">
+            <option value="auto">장비 전문에 따름</option>
+            <option value="-">음이온 고정</option>
+            <option value="+">양이온 고정</option>
+          </select></div>
+      </div>
+      <p class="note" id="countNote"></p>
+      <label class="chkrow"><input type="checkbox" id="setRangeTrack">레인지가 바뀌면 새 범위로 이어서 그리기</label>
+      <label class="chkrow"><input type="checkbox" id="setOverWarn">측정범위 초과(<b>****</b>) 발생 시 경고 표시</label>
+      <label class="chkrow"><input type="checkbox" id="setBuzz">측정이 끝나면 진동으로 알리기</label>
+      <label class="chkrow"><input type="checkbox" id="setWake">측정 중 화면이 꺼지지 않게 하기</label>
+    </section>
+
+    <section class="tabpane" data-pane="graph">
+      <div class="row2">
+        <div class="field"><label for="setScale">세로축 기준</label>
+          <select id="setScale">
+            <option value="auto">자동</option><option value="1000">0 – 1,000</option>
+            <option value="2000">0 – 2,000</option><option value="5000">0 – 5,000</option>
+            <option value="10000">0 – 10,000</option>
+          </select></div>
+        <div class="field"><label for="setXstart">가로축 시작</label>
+          <select id="setXstart">
+            <option value="0">측정 시작 시점부터</option>
+            <option value="300">최근 5분</option>
+            <option value="120">최근 2분</option>
+          </select></div>
+      </div>
+      <label class="chkrow"><input type="checkbox" id="setThemeCol">화면 테마 색상 그대로 쓰기</label>
+      <div class="field" id="colField"><label>직접 지정한 색상</label>
+        <div class="swatches">
+          <label class="sw"><input type="color" id="colIon"> 음이온</label>
+          <label class="sw"><input type="color" id="colOndo"> 기온</label>
+          <label class="sw"><input type="color" id="colSitudo"> 습도</label>
+        </div></div>
+      <label class="chkrow"><input type="checkbox" id="setAvgLine">평균선 표시</label>
+      <label class="chkrow"><input type="checkbox" id="setGrid">격자 표시</label>
+    </section>
+
+    <section class="tabpane" data-pane="store">
+      <label class="chkrow"><input type="checkbox" id="setAutoSave">측정이 끝나면 보관함에 자동으로 넣기</label>
+      <div class="field"><label for="setFmt">기본 저장 형식</label>
+        <select id="setFmt">
+          <option value="raw">원본 형식 (.txt) — 기존 프로그램과 동일</option>
+          <option value="csv">표 형식 (.csv)</option>
+          <option value="report">한글 리포트 (.txt)</option>
+        </select></div>
+      <p class="note">보관함은 태블릿 안에 저장되므로 인터넷이 없어도 유지됩니다. 최근 40건까지 보관하며, 그보다 오래된 것은 밀려납니다. 중요한 측정은 그날 안에 내려받아 두세요.</p>
+      <div class="diag" id="storeInfo"></div>
+    </section>
+
+    <section class="tabpane" data-pane="rep">
+      <div class="field"><label for="setTitle">리포트 제목</label><input id="setTitle" placeholder="예) 괴산연습림 대기 음이온 조사"></div>
+      <div class="row2">
+        <div class="field"><label for="setName">조사자명</label><input id="setName"></div>
+        <div class="field"><label for="setSite">측정장소</label><input id="setSite"></div>
+      </div>
+      <div class="field"><label for="setMemo">코멘트</label><textarea id="setMemo"></textarea></div>
+      <div class="row2">
+        <div class="field"><label for="setMemo1">메모 1</label><input id="setMemo1"></div>
+        <div class="field"><label for="setMemo2">메모 2</label><input id="setMemo2"></div>
+      </div>
+      <p class="note">조사자명과 측정장소는 한글 리포트의 <b>조사자명</b> 칸에 들어갑니다.</p>
+    </section>
   </div>
-  <div class="dlg-foot"><button class="btn" data-close>닫기</button><button class="btn primary" id="setupSave">적용</button></div>
+  <div class="dlg-foot">
+    <button class="btn" id="setupReset">기본값으로</button>
+    <button class="btn" data-close>닫기</button>
+    <button class="btn primary" id="setupSave">적용</button>
+  </div>
 </dialog>
 
 <!-- 저장 -->
@@ -414,27 +529,51 @@ const state = {
   connectedAt: null,
   dropped: 0,
   tag: "M1-",
+  range: null,
+  statPol: "-",
   meta: { name: "", site: "", memo: "", cmd: "" },
   baud: 19200,
   scale: "auto",
 };
 
-/* ---------- 저장소 ---------- */
+/* ---------- 환경설정 ---------- */
+// 원본 프로그램의 환경설정(mnu_envSet) 항목을 그대로 옮겼다.
+const DEFAULTS = {
+  link: "usb", baud: 19200, cmd: "",
+  count: 900, pol: "auto", rangeTrack: true, overWarn: true, buzz: true, wake: true,
+  scale: "auto", xstart: "0", themeCol: true,
+  colIon: "#0E6E52", colOndo: "#2C5E8F", colSitudo: "#B4690E",
+  avgLine: true, grid: true,
+  autoSave: true, fmt: "raw",
+  title: "", name: "", site: "", memo: "", memo1: "", memo2: "",
+};
+const cfg = Object.assign({}, DEFAULTS);
+
+function syncFromCfg() {
+  state.target = Math.max(1, cfg.count | 0);
+  state.baud = cfg.baud;
+  state.scale = cfg.scale;
+  state.meta = { name: cfg.name, site: cfg.site, memo: cfg.memo, cmd: cfg.cmd };
+  $("#scaleSel").value = cfg.scale;
+  $("#saveFmt").value = cfg.fmt;
+}
 function loadPrefs() {
   try {
     const j = JSON.parse(localStorage.getItem(LS) || "{}");
-    if (j.meta) Object.assign(state.meta, j.meta);
-    if (j.target) state.target = j.target;
-    if (j.baud) state.baud = j.baud;
+    if (j.cfg) Object.assign(cfg, j.cfg);
+    // 이전 버전에서 저장한 값도 이어받는다
+    if (j.target) cfg.count = j.target;
+    if (j.baud) cfg.baud = j.baud;
+    if (j.meta) { cfg.name = j.meta.name || cfg.name; cfg.site = j.meta.site || cfg.site; cfg.memo = j.meta.memo || cfg.memo; cfg.cmd = j.meta.cmd || cfg.cmd; }
     if (j.hum) $("#humIn").value = j.hum;
     if (j.theme) document.documentElement.setAttribute("data-theme", j.theme);
   } catch (e) { /* 저장소를 못 쓰는 환경 — 기본값으로 진행 */ }
+  syncFromCfg();
 }
 function savePrefs() {
   try {
     localStorage.setItem(LS, JSON.stringify({
-      meta: state.meta, target: state.target, baud: state.baud,
-      hum: $("#humIn").value,
+      cfg, hum: $("#humIn").value,
       theme: document.documentElement.getAttribute("data-theme") || "",
     }));
   } catch (e) {}
@@ -589,7 +728,21 @@ function handleLine(line) {
   if (r.eof) { finishMeasure("장비가 EOF를 보냈습니다"); return; }
   if (r.meta) { pushRaw(r.meta); return; }
   if (r.bad) { state.dropped++; pushRaw(r.bad + "   ← 형식 불일치"); render(); return; }
+  if (cfg.pol !== "auto") { r.polarity = cfg.pol; r.tag = r.tag.slice(0, 2) + cfg.pol; }
   r.t = new Date();
+
+  // 측정 도중 장비 레인지가 바뀐 경우
+  if (state.range !== null && r.range !== state.range && state.mode === "measuring") {
+    if (cfg.rangeTrack) {
+      pushRaw(`레인지 ${state.range} → ${r.range} 로 바뀌었습니다. 새 범위로 이어서 기록합니다.`);
+      toast(`레인지가 ${state.range}에서 ${r.range}(으)로 바뀌었습니다`);
+    } else {
+      state.range = r.range;
+      finishMeasure(`레인지가 ${r.range}(으)로 바뀌어 측정을 중단했습니다`);
+      return;
+    }
+  }
+  state.range = r.range;
   state.tag = r.tag;
   if (state.mode === "measuring") {
     state.samples.push(r);
@@ -623,20 +776,38 @@ function render() {
     $("#chipTag").textContent = r.tag;
     $("#chipPol").textContent = r.polarity === "-" ? "극성 음(−)" : "극성 양(+)";
     $("#chipRange").textContent = `레인지 ${r.range}`;
-    $("#chipOver").hidden = !r.over;
-    meter.classList.toggle("over", !!r.over);
+    const flag = !!r.over && cfg.overWarn;
+    $("#chipOver").hidden = !flag;
+    meter.classList.toggle("over", flag);
     $("#sampleClock").textContent = r.t
       ? `${pad(r.t.getHours())}:${pad(r.t.getMinutes())}:${pad(r.t.getSeconds())}` : "--:--:--";
   }
-  const vals = state.samples.filter((s) => !s.over).map((s) => s.ion);
+  // 극성별 통계 — 원본 프로그램도 양이온·음이온을 따로 집계했다
+  const pols = {};
+  for (const s of state.samples) {
+    if (s.over) continue;
+    (pols[s.polarity] || (pols[s.polarity] = [])).push(s.ion);
+  }
+  const keys = Object.keys(pols);
+  const seg = $("#polSeg");
+  seg.hidden = keys.length < 2;
+  if (!keys.includes(state.statPol)) state.statPol = keys[0] || "-";
+  seg.querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.pol === state.statPol)));
+  $("#statsLabel").textContent = "측정 통계 · " + (state.statPol === "+" ? "양이온" : "음이온");
+
+  const vals = pols[state.statPol] || [];
   if (vals.length) {
-    const mn = Math.min(...vals), mx = Math.max(...vals);
-    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - avg) ** 2, 0) / vals.length);
+    let mn = Infinity, mx = -Infinity, sum = 0;
+    for (const v of vals) { if (v < mn) mn = v; if (v > mx) mx = v; sum += v; }
+    const avg = sum / vals.length;
+    let ss = 0; for (const v of vals) ss += (v - avg) ** 2;
     $("#stMin").textContent = mn.toLocaleString("ko-KR");
     $("#stMax").textContent = mx.toLocaleString("ko-KR");
     $("#stAvg").textContent = Math.round(avg).toLocaleString("ko-KR");
-    $("#stSd").textContent = Math.round(sd).toLocaleString("ko-KR");
+    $("#stSd").textContent = Math.round(Math.sqrt(ss / vals.length)).toLocaleString("ko-KR");
+  } else {
+    ["#stMin", "#stMax", "#stAvg", "#stSd"].forEach((k) => { $(k).textContent = "0"; });
   }
   const n = state.samples.length;
   $("#mCount").textContent = n.toLocaleString("ko-KR");
@@ -668,9 +839,12 @@ function drawChart() {
   const padL = 46, padR = 40, padT = 10, padB = 20;
   const iw = w - padL - padR, ih = h - padT - padB;
   const line = cssVar("--line"), muted = cssVar("--muted");
-  const accent = cssVar("--accent"), tempC = cssVar("--temp");
+  const accent = cfg.themeCol ? cssVar("--accent") : cfg.colIon;
+  const tempC = cfg.themeCol ? cssVar("--temp") : cfg.colOndo;
 
-  const data = state.samples.length ? state.samples : (lastLive ? [lastLive] : []);
+  const all = state.samples.length ? state.samples : (lastLive ? [lastLive] : []);
+  const win = parseInt(cfg.xstart, 10) || 0;   // 0이면 전 구간, 아니면 최근 N초만
+  const data = win > 0 ? all.slice(-win) : all;
   const ions = data.filter((d) => !d.over).map((d) => d.ion);
   let top = state.scale === "auto"
     ? Math.max(500, Math.ceil((Math.max(1, ...ions) * 1.15) / 250) * 250)
@@ -681,8 +855,10 @@ function drawChart() {
   ctx.textBaseline = "middle";
   for (let i = 0; i <= 4; i++) {
     const y = padT + (ih * i) / 4;
-    ctx.strokeStyle = line; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
+    if (cfg.grid || i === 4) {
+      ctx.strokeStyle = line; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
+    }
     ctx.fillStyle = muted; ctx.textAlign = "right";
     ctx.fillText(Math.round(top * (1 - i / 4)).toLocaleString("ko-KR"), padL - 7, y);
   }
@@ -698,7 +874,7 @@ function drawChart() {
   }
   if (!data.length) return;
 
-  const span = Math.max(state.target, data.length);
+  const span = win > 0 ? Math.max(win, data.length) : Math.max(state.target, data.length);
   const X = (i) => padL + (iw * i) / Math.max(1, span - 1);
 
   // 기온 곡선
@@ -732,6 +908,20 @@ function drawChart() {
     started ? ctx.lineTo(X(i), y) : (ctx.moveTo(X(i), y), started = true);
   });
   ctx.strokeStyle = accent; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
+
+  // 평균선
+  const shown = data.filter((d) => !d.over).map((d) => d.ion);
+  if (cfg.avgLine && shown.length > 1) {
+    const avg = shown.reduce((a, b) => a + b, 0) / shown.length;
+    const y = Y(avg);
+    ctx.save();
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = accent; ctx.lineWidth = 1; ctx.globalAlpha = .75;
+    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = accent; ctx.textAlign = "left";
+    ctx.font = '500 9.5px "IBM Plex Mono", monospace';
+    ctx.fillText("평균 " + Math.round(avg).toLocaleString("ko-KR"), padL + 4, y - 7);
+  }
 
   // 마지막 지점 강조
   const last = data[data.length - 1];
@@ -770,6 +960,10 @@ function clearDemo() {
 let connTimer = null;
 async function connect() {
   if (ftdi.connected) { await disconnect(); return; }
+  if (cfg.link === "lan") {
+    toast("이더넷 접속은 태블릿에서 쓸 수 없습니다 — 환경설정에서 USB 변환기를 고르세요");
+    return;
+  }
   try {
     clearDemo();
     setStatus("", "연결 중…");
@@ -806,9 +1000,11 @@ async function disconnect() {
 }
 function startMeasure() {
   state.samples = []; state.dropped = 0; state.startedAt = new Date();
+  state.range = null;
   state.mode = "measuring";
   $("#btnStart").disabled = true; $("#btnStop").disabled = false; $("#btnSave").disabled = true;
   setStatus("live", "측정 중");
+  updateWake();
   render();
   toast(`측정을 시작했습니다 · 목표 ${state.target.toLocaleString("ko-KR")}샘플`);
 }
@@ -818,16 +1014,18 @@ function finishMeasure(why) {
   $("#btnStart").disabled = !ftdi.connected; $("#btnStop").disabled = true;
   $("#btnSave").disabled = state.samples.length === 0;
   setStatus(ftdi.connected ? "live" : "", ftdi.connected ? "연결됨 · 측정 완료" : "측정 완료");
-  if (state.samples.length) {
+  if (state.samples.length && cfg.autoSave) {
     saveSession({
       id: Date.now(),
       started: state.startedAt ? state.startedAt.toISOString() : new Date().toISOString(),
       n: state.samples.length,
-      site: state.meta.site, name: state.meta.name,
+      site: cfg.site, name: cfg.name,
       hum: $("#humIn").value,
       lines: state.samples.map(formatLine),
     });
   }
+  if (cfg.buzz && navigator.vibrate) navigator.vibrate([120, 70, 120]);
+  updateWake();
   toast(why || "측정을 마쳤습니다");
 }
 
@@ -867,17 +1065,18 @@ function buildReport() {
   return "﻿" + rows.join("\r\n") + "\r\n";
 }
 
-async function download(filename, text) {
+async function download(filename, data) {
   const dl = await claudeCap("downloads");
   if (dl) {
-    try { await dl.save({ filename, data: text }); toast("저장했습니다"); return; }
+    try { await dl.save({ filename, data }); toast("저장했습니다"); return; }
     catch (e) {
       if (e && e.code === "declined") { toast("저장을 취소했습니다"); return; }
       // 저장 기능을 못 쓰는 경우 아래 방식으로 넘어간다
     }
   }
   try {
-    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    const blob = data instanceof Blob ? data : new Blob([data], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = filename; document.body.appendChild(a); a.click();
     a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
@@ -942,24 +1141,142 @@ $("#fileIn").addEventListener("change", async (e) => {
 document.querySelectorAll("[data-close]").forEach((b) =>
   b.addEventListener("click", () => b.closest("dialog").close()));
 
-$("#btnSetup").addEventListener("click", () => {
-  $("#setCount").value = state.target;
-  $("#setBaud").value = String(state.baud);
-  $("#setName").value = state.meta.name;
-  $("#setSite").value = state.meta.site;
-  $("#setMemo").value = state.meta.memo;
-  $("#setCmd").value = state.meta.cmd;
-  $("#dlgSetup").showModal();
+/* ---------- 환경설정 화면 ---------- */
+const FIELDS = [
+  ["setLink", "link", "s"], ["setBaud", "baud", "i"], ["setCmd", "cmd", "s"],
+  ["setCount", "count", "i"], ["setPol", "pol", "s"],
+  ["setRangeTrack", "rangeTrack", "b"], ["setOverWarn", "overWarn", "b"],
+  ["setBuzz", "buzz", "b"], ["setWake", "wake", "b"],
+  ["setScale", "scale", "s"], ["setXstart", "xstart", "s"], ["setThemeCol", "themeCol", "b"],
+  ["colIon", "colIon", "s"], ["colOndo", "colOndo", "s"], ["colSitudo", "colSitudo", "s"],
+  ["setAvgLine", "avgLine", "b"], ["setGrid", "grid", "b"],
+  ["setAutoSave", "autoSave", "b"], ["setFmt", "fmt", "s"],
+  ["setTitle", "title", "s"], ["setName", "name", "s"], ["setSite", "site", "s"],
+  ["setMemo", "memo", "s"], ["setMemo1", "memo1", "s"], ["setMemo2", "memo2", "s"],
+];
+function fillForm(src) {
+  for (const [id, key, t] of FIELDS) {
+    const el = $("#" + id); if (!el) continue;
+    if (t === "b") el.checked = !!src[key]; else el.value = src[key];
+  }
+  refreshSetupUi();
+}
+function readForm() {
+  for (const [id, key, t] of FIELDS) {
+    const el = $("#" + id); if (!el) continue;
+    if (t === "b") cfg[key] = el.checked;
+    else if (t === "i") cfg[key] = parseInt(el.value, 10) || DEFAULTS[key];
+    else cfg[key] = typeof el.value === "string" ? el.value.trim() : el.value;
+  }
+  cfg.count = Math.max(1, cfg.count);
+}
+function refreshSetupUi() {
+  $("#lanNote").hidden = $("#setLink").value !== "lan";
+  $("#colField").hidden = $("#setThemeCol").checked;
+  const n = parseInt($("#setCount").value, 10) || 0;
+  $("#countNote").textContent = n ? `초당 1샘플 기준 약 ${mmss(n)} 걸립니다.` : "";
+  let used = 0;
+  try { used = (localStorage.getItem(LS + ".sessions") || "").length; } catch (e) {}
+  $("#storeInfo").innerHTML =
+    `<div><span>보관된 측정</span><b>${loadSessions().length}건</b></div>` +
+    `<div><span>차지한 용량</span><b>${(used / 1024).toFixed(0)} KB</b></div>`;
+}
+function applyCfg() {
+  $("#humIn").style.color = cfg.themeCol ? "" : cfg.colSitudo;
+  const tv = document.querySelector(".tile.temp .val");
+  if (tv) tv.style.color = cfg.themeCol ? "" : cfg.colOndo;
+  updateWake();
+}
+$("#btnSetup").addEventListener("click", () => { fillForm(cfg); $("#dlgSetup").showModal(); });
+$("#dlgSetup").addEventListener("input", refreshSetupUi);
+$("#dlgSetup").addEventListener("change", refreshSetupUi);
+document.querySelector(".tabs").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-tab]"); if (!b) return;
+  document.querySelectorAll(".tabs button").forEach((x) =>
+    x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll(".tabpane").forEach((p) =>
+    p.classList.toggle("on", p.dataset.pane === b.dataset.tab));
+});
+$("#setupReset").addEventListener("click", () => {
+  fillForm(DEFAULTS);
+  toast("기본값을 불러왔습니다 — 적용을 눌러야 저장됩니다");
 });
 $("#setupSave").addEventListener("click", () => {
-  state.target = Math.max(1, parseInt($("#setCount").value, 10) || 900);
-  state.baud = parseInt($("#setBaud").value, 10) || 19200;
-  state.meta.name = $("#setName").value.trim();
-  state.meta.site = $("#setSite").value.trim();
-  state.meta.memo = $("#setMemo").value.trim();
-  state.meta.cmd = $("#setCmd").value.trim();
-  savePrefs(); render(); $("#dlgSetup").close();
-  toast("설정을 적용했습니다");
+  readForm(); syncFromCfg(); savePrefs(); applyCfg(); render();
+  $("#dlgSetup").close();
+  toast("환경설정을 적용했습니다");
+});
+
+/* ---------- 화면 저장 ---------- */
+// 계측 화면을 한 장의 그림으로 남긴다 (원본 프로그램의 Capture 기능)
+$("#btnCap").addEventListener("click", async () => {
+  const W = 1240, H = 780, P = 44;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const bg = cssVar("--surface"), ink = cssVar("--ink"), mut = cssVar("--muted");
+  const acc = cfg.themeCol ? cssVar("--accent") : cfg.colIon;
+  g.fillStyle = cssVar("--ground"); g.fillRect(0, 0, W, H);
+  g.fillStyle = bg; g.fillRect(P, P, W - P * 2, H - P * 2);
+  g.strokeStyle = cssVar("--line"); g.strokeRect(P + .5, P + .5, W - P * 2, H - P * 2);
+  g.fillStyle = acc; g.fillRect(P, P, 5, H - P * 2);
+
+  const d = state.startedAt || new Date();
+  g.textBaseline = "top"; g.textAlign = "left";
+  g.fillStyle = ink; g.font = '700 26px "IBM Plex Sans KR", sans-serif';
+  g.fillText(cfg.title || "대기 음이온 측정", P + 30, P + 26);
+  g.fillStyle = mut; g.font = '400 15px "IBM Plex Sans KR", sans-serif';
+  const head = [cfg.site && `장소 ${cfg.site}`, cfg.name && `조사자 ${cfg.name}`,
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    `${state.samples.length.toLocaleString("ko-KR")}샘플`].filter(Boolean).join("   ·   ");
+  g.fillText(head, P + 30, P + 62);
+
+  const cells = [
+    ["음이온 평균", $("#stAvg").textContent, "개/cm³"],
+    ["최소", $("#stMin").textContent, ""], ["최대", $("#stMax").textContent, ""],
+    ["표준편차", $("#stSd").textContent, ""],
+    ["기온", $("#tempVal").textContent.replace(/\s+/g, " ").trim(), ""],
+    ["습도", ($("#humIn").value || "-") + " %", ""],
+  ];
+  const cw = (W - P * 2 - 60) / cells.length;
+  cells.forEach((cell, i) => {
+    const x = P + 30 + cw * i, y = P + 108;
+    g.fillStyle = mut; g.font = '600 12px "IBM Plex Sans Condensed", sans-serif';
+    g.fillText(cell[0], x, y);
+    g.fillStyle = i === 0 ? acc : ink;
+    g.font = (i === 0 ? '600 34px ' : '500 25px ') + '"IBM Plex Mono", monospace';
+    g.fillText(cell[1], x, y + 20);
+    if (cell[2]) {
+      g.fillStyle = mut; g.font = '400 12px "IBM Plex Sans KR", sans-serif';
+      g.fillText(cell[2], x, y + 60);
+    }
+  });
+
+  g.drawImage(cv, P + 30, P + 200, W - P * 2 - 60, H - P * 2 - 268);
+  if (cfg.memo || cfg.memo1 || cfg.memo2) {
+    g.fillStyle = mut; g.font = '400 13px "IBM Plex Sans KR", sans-serif';
+    g.fillText([cfg.memo, cfg.memo1, cfg.memo2].filter(Boolean).join("   ·   ").slice(0, 120), P + 30, H - P - 34);
+  }
+  const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+  await download(`${fileStamp(d)}_화면.png`, blob);
+});
+
+$("#polSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-pol]"); if (!b) return;
+  state.statPol = b.dataset.pol; render();
+});
+
+/* ---------- 화면 꺼짐 방지 ---------- */
+let wakeLock = null;
+async function updateWake() {
+  try {
+    if (cfg.wake && state.mode === "measuring" && "wakeLock" in navigator) {
+      if (!wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+    } else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") updateWake();
 });
 
 $("#btnSave").addEventListener("click", () => {
@@ -1039,7 +1356,9 @@ $("#sessList").addEventListener("click", async (e) => {
 $("#btnConnect").addEventListener("click", connect);
 $("#btnStart").addEventListener("click", startMeasure);
 $("#btnStop").addEventListener("click", () => finishMeasure("측정을 정지했습니다"));
-$("#scaleSel").addEventListener("change", (e) => { state.scale = e.target.value; drawChart(); });
+$("#scaleSel").addEventListener("change", (e) => {
+  state.scale = cfg.scale = e.target.value; savePrefs(); drawChart();
+});
 $("#humIn").addEventListener("change", savePrefs);
 $("#btnTheme").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
@@ -1054,6 +1373,7 @@ if (navigator.usb) {
 
 /* ---------- 시작 ---------- */
 loadPrefs();
+applyCfg();
 render();
 startDemo();
 </script>
