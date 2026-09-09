@@ -1,0 +1,1056 @@
+<title>COM-3600F 필드 콘솔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#F2F4F3; --surface:#FFFFFF; --surface-2:#E9EDEB; --sunken:#E3E8E5;
+  --ink:#16201C; --ink-2:#3D4B45; --muted:#5E6B65; --line:#D5DCD8; --line-2:#C2CCC7;
+  --accent:#0E6E52; --accent-soft:#DCEBE4; --accent-ink:#0B5741;
+  --warn:#B4690E; --warn-soft:#F7EBD8;
+  --bad:#A62C2C; --bad-soft:#F6E2E2;
+  --temp:#2C5E8F;
+  --shadow:0 1px 2px rgba(22,32,28,.06),0 8px 24px -12px rgba(22,32,28,.18);
+  --r:10px;
+  --sans:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#121A17; --surface:#19231F; --surface-2:#212D28; --sunken:#0E1613;
+    --ink:#E6EDE9; --ink-2:#C2CFC9; --muted:#8A9A93; --line:#2C3A34; --line-2:#3A4A43;
+    --accent:#3FBF8F; --accent-soft:#163027; --accent-ink:#7FDCB8;
+    --warn:#E0A340; --warn-soft:#2E2415;
+    --bad:#E07A7A; --bad-soft:#2E1A1A;
+    --temp:#7FB2E0;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121A17; --surface:#19231F; --surface-2:#212D28; --sunken:#0E1613;
+  --ink:#E6EDE9; --ink-2:#C2CFC9; --muted:#8A9A93; --line:#2C3A34; --line-2:#3A4A43;
+  --accent:#3FBF8F; --accent-soft:#163027; --accent-ink:#7FDCB8;
+  --warn:#E0A340; --warn-soft:#2E2415;
+  --bad:#E07A7A; --bad-soft:#2E1A1A;
+  --temp:#7FB2E0;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;
+  display:flex;flex-direction:column;min-height:100vh;
+}
+button{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.eyebrow{
+  font-family:var(--cond);font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:10px 16px;
+  background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;
+}
+.brand{display:flex;flex-direction:column;line-height:1.15;margin-right:2px}
+.brand b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.brand span{font-size:11.5px;color:var(--muted)}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
+  font-size:12.5px;font-weight:600;border:1px solid var(--line-2);background:var(--surface-2);
+  color:var(--ink-2);white-space:nowrap;
+}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.pill.live{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.pill.live .dot{background:var(--accent);animation:beat 1s ease-in-out infinite}
+.pill.demo{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.pill.demo .dot{background:var(--warn)}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.pill.live .dot{animation:none}}
+.clockbox{display:flex;gap:16px;margin-left:auto;align-items:center;flex-wrap:wrap}
+.kv{display:flex;flex-direction:column;line-height:1.2}
+.kv b{font-family:var(--mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.iconbtn{
+  border:1px solid var(--line-2);background:var(--surface-2);border-radius:8px;
+  padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent-ink)}
+
+/* ---------- panel ---------- */
+.panel{
+  flex:1;display:grid;grid-template-columns:minmax(300px,360px) 1fr;
+  gap:14px;padding:14px;align-content:start;
+}
+@media (max-width:900px){.panel{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;min-width:0;
+}
+.card.flat{background:transparent;border:none;padding:0}
+
+/* meter */
+.meter{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.meter::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent);
+}
+.meter.over::before{background:var(--warn)}
+.meter-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.readout{display:flex;align-items:baseline;gap:8px;margin:4px 0 2px}
+#ionVal{
+  font-family:var(--mono);font-size:clamp(46px,9vw,68px);font-weight:600;
+  letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;
+  color:var(--accent-ink);
+}
+.meter.over #ionVal{color:var(--warn)}
+.unit{font-size:14px;color:var(--muted);font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{
+  font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:5px;
+  background:var(--sunken);border:1px solid var(--line);color:var(--ink-2);
+}
+.chip.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-family:var(--sans);font-weight:600}
+
+/* env tiles */
+.env{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 13px;display:flex;flex-direction:column;gap:2px;
+}
+.tile .val{font-family:var(--mono);font-size:26px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile.temp .val{color:var(--temp)}
+.tile input{
+  font-family:var(--mono);font-size:26px;font-weight:500;width:100%;border:none;
+  background:transparent;color:var(--ink);padding:0;border-bottom:1px dashed var(--line-2);
+  font-variant-numeric:tabular-nums;
+}
+.tile input:focus{outline:none;border-bottom-color:var(--accent)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.stat{background:var(--surface);padding:10px 8px;text-align:center}
+.stat b{display:block;font-family:var(--mono);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.2}
+
+/* chart */
+.scope{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px 6px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+.scope-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
+.lg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.lg i{width:14px;height:3px;border-radius:2px;display:block}
+.chartwrap{position:relative;width:100%;height:clamp(180px,30vh,300px)}
+canvas{width:100%;height:100%;display:block}
+select,.mini{
+  border:1px solid var(--line-2);background:var(--surface-2);border-radius:7px;
+  padding:5px 9px;font-size:12.5px;font-family:var(--sans);color:var(--ink);cursor:pointer;
+}
+
+/* progress */
+.prog{display:flex;flex-direction:column;gap:7px}
+.bar{height:8px;background:var(--sunken);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.progmeta{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.progmeta b{font-family:var(--mono);color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* raw monitor */
+.rawbox{
+  background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
+  padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.75;
+  overflow-x:auto;white-space:pre;color:var(--ink-2);min-height:96px;
+}
+.rawbox .new{color:var(--accent-ink);font-weight:500}
+
+/* actions */
+.actions{
+  position:sticky;bottom:0;display:flex;gap:8px;padding:10px 14px;
+  background:var(--surface);border-top:1px solid var(--line);flex-wrap:wrap;
+}
+.btn{
+  flex:1 1 auto;min-width:104px;min-height:46px;padding:0 16px;border-radius:9px;
+  border:1px solid var(--line-2);background:var(--surface-2);font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);color:#fff}
+.btn.stop{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* dialog */
+dialog{
+  border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);
+  padding:0;max-width:min(560px,94vw);width:100%;box-shadow:var(--shadow);
+}
+dialog::backdrop{background:rgba(10,18,15,.5)}
+.dlg-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.dlg-head h2{margin:0;font-size:16px;font-weight:700}
+.dlg-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-height:66vh;overflow-y:auto}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.field input,.field textarea,.field select{
+  border:1px solid var(--line-2);background:var(--ground);border-radius:8px;
+  padding:9px 11px;font-family:var(--sans);font-size:14px;color:var(--ink);width:100%;
+}
+.field input.num,.field input[inputmode]{font-family:var(--mono)}
+.field textarea{min-height:64px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.note{font-size:12.5px;color:var(--muted);line-height:1.6}
+.diag{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.diag div{display:flex;justify-content:space-between;gap:12px;background:var(--surface);padding:9px 12px;font-size:13px}
+.diag b{font-family:var(--mono);font-weight:500}
+.ok{color:var(--accent-ink)}.no{color:var(--bad)}
+.sesslist{display:flex;flex-direction:column;gap:8px}
+.sess{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--ground)}
+.sess .meta{flex:1;min-width:0}
+.sess .meta b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:500}
+.sess .meta span{font-size:12px;color:var(--muted)}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:var(--ground);padding:11px 18px;border-radius:9px;
+  font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  z-index:50;max-width:90vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+
+<header class="topbar">
+  <div class="brand">
+    <b>COM-3600F 필드 콘솔</b>
+    <span>대기 음이온 측정 · 갤럭시탭 단독 운용</span>
+  </div>
+  <span class="pill demo" id="statusPill"><i class="dot"></i><span id="statusText">데모 재생 중</span></span>
+  <div class="clockbox">
+    <div class="kv"><span class="eyebrow">접속 시간</span><b id="connTime">00:00:00</b></div>
+    <button class="iconbtn" id="btnDiag">진단</button>
+    <button class="iconbtn" id="btnSetup">설정</button>
+    <button class="iconbtn" id="btnTheme" title="밝게/어둡게">◐</button>
+  </div>
+</header>
+
+<main class="panel">
+  <div class="col">
+    <section class="meter" id="meterCard">
+      <div class="meter-head">
+        <span class="eyebrow">음이온 농도</span>
+        <span class="eyebrow" id="sampleClock">--:--:--</span>
+      </div>
+      <div class="readout">
+        <span id="ionVal">0</span>
+        <span class="unit">개 / cm³</span>
+      </div>
+      <div class="chips">
+        <span class="chip" id="chipTag">M1-</span>
+        <span class="chip" id="chipPol">극성 음(−)</span>
+        <span class="chip" id="chipRange">레인지 1</span>
+        <span class="chip warn" id="chipOver" hidden>측정범위 초과</span>
+      </div>
+    </section>
+
+    <div class="env">
+      <div class="tile temp">
+        <span class="eyebrow">기온 (수신)</span>
+        <span class="val" id="tempVal">--.-<span class="unit"> ℃</span></span>
+      </div>
+      <div class="tile">
+        <span class="eyebrow">습도 (직접 입력)</span>
+        <input id="humIn" class="num" inputmode="numeric" value="55" maxlength="3" aria-label="습도 퍼센트">
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="eyebrow">최소</span><b id="stMin">0</b></div>
+      <div class="stat"><span class="eyebrow">최대</span><b id="stMax">0</b></div>
+      <div class="stat"><span class="eyebrow">평균</span><b id="stAvg">0</b></div>
+      <div class="stat"><span class="eyebrow">표준편차</span><b id="stSd">0</b></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <section class="scope">
+      <div class="scope-head">
+        <span class="eyebrow">실시간 파형</span>
+        <select id="scaleSel" aria-label="세로축 범위">
+          <option value="auto">자동 범위</option>
+          <option value="1000">0 – 1,000</option>
+          <option value="2000">0 – 2,000</option>
+          <option value="5000">0 – 5,000</option>
+          <option value="10000">0 – 10,000</option>
+        </select>
+        <div class="legend">
+          <span class="lg"><i style="background:var(--accent)"></i>음이온</span>
+          <span class="lg"><i style="background:var(--temp)"></i>기온</span>
+        </div>
+      </div>
+      <div class="chartwrap"><canvas id="chart"></canvas></div>
+    </section>
+
+    <div class="card prog">
+      <div class="bar"><i id="progBar"></i></div>
+      <div class="progmeta">
+        <span>수집 <b id="mCount">0</b> / <b id="mTarget">900</b> 샘플</span>
+        <span>경과 <b id="mElapsed">00:00</b></span>
+        <span>남음 <b id="mLeft">15:00</b></span>
+        <span>결측 <b id="mDrop">0</b></span>
+      </div>
+    </div>
+
+    <div class="card flat">
+      <span class="eyebrow">수신 전문 (고정폭 14자)</span>
+      <div class="rawbox" id="rawBox">장비 연결을 기다리는 중…</div>
+    </div>
+  </div>
+</main>
+
+<footer class="actions">
+  <button class="btn primary" id="btnConnect">장비 연결</button>
+  <button class="btn" id="btnStart" disabled>측정 시작</button>
+  <button class="btn stop" id="btnStop" disabled>정지</button>
+  <button class="btn" id="btnSave" disabled>저장</button>
+  <button class="btn" id="btnOpen">파일 열기</button>
+  <button class="btn" id="btnSess">보관함</button>
+</footer>
+
+<input type="file" id="fileIn" accept=".txt" hidden>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- 설정 -->
+<dialog id="dlgSetup">
+  <div class="dlg-head"><h2>측정 설정</h2></div>
+  <div class="dlg-body">
+    <div class="row2">
+      <div class="field"><label for="setCount">측정 샘플 수 (wCnt)</label>
+        <input id="setCount" class="num" inputmode="numeric" value="900"></div>
+      <div class="field"><label for="setBaud">통신 속도 (bps)</label>
+        <select id="setBaud"><option>19200</option><option>9600</option><option>38400</option><option>57600</option><option>115200</option></select></div>
+    </div>
+    <p class="note">장비 기본값은 <b>19200 bps · 8데이터 · 패리티 없음 · 1정지비트</b>, 초당 1샘플입니다. 900샘플이 정확히 15분입니다.</p>
+    <div class="row2">
+      <div class="field"><label for="setName">조사자명</label><input id="setName" value=""></div>
+      <div class="field"><label for="setSite">조사장소</label><input id="setSite" value=""></div>
+    </div>
+    <div class="field"><label for="setMemo">비고</label><textarea id="setMemo"></textarea></div>
+    <div class="field">
+      <label for="setCmd">측정 시작 명령 (선택)</label>
+      <input id="setCmd" class="num" placeholder="비워두면 장비가 보내는 값을 그대로 수신">
+      <p class="note">장비가 전원을 켜면 스스로 값을 흘려보내는 방식이면 비워두세요. 별도 시작 명령이 필요한 장비라면 여기에 넣으면 연결 직후 한 번 전송합니다. <code>\r</code>, <code>\n</code> 표기를 씁니다.</p>
+    </div>
+  </div>
+  <div class="dlg-foot"><button class="btn" data-close>닫기</button><button class="btn primary" id="setupSave">적용</button></div>
+</dialog>
+
+<!-- 저장 -->
+<dialog id="dlgSave">
+  <div class="dlg-head"><h2>측정 결과 저장</h2></div>
+  <div class="dlg-body">
+    <div class="diag" id="saveSummary"></div>
+    <div class="field">
+      <label for="saveFmt">저장 형식</label>
+      <select id="saveFmt">
+        <option value="raw">원본 형식 (.txt) — 기존 프로그램과 동일</option>
+        <option value="csv">표 형식 (.csv) — 엑셀 바로 열기</option>
+        <option value="report">한글 리포트 (.txt) — 조사일자·조사자명 표</option>
+      </select>
+    </div>
+    <p class="note" id="saveNote"></p>
+  </div>
+  <div class="dlg-foot"><button class="btn" data-close>닫기</button><button class="btn primary" id="doSave">내려받기</button></div>
+</dialog>
+
+<!-- 진단 -->
+<dialog id="dlgDiag">
+  <div class="dlg-head"><h2>연결 진단</h2></div>
+  <div class="dlg-body">
+    <div class="diag" id="diagList"></div>
+    <p class="note" id="diagHint"></p>
+  </div>
+  <div class="dlg-foot"><button class="btn primary" data-close>확인</button></div>
+</dialog>
+
+<!-- 보관함 -->
+<dialog id="dlgSess">
+  <div class="dlg-head"><h2>측정 보관함</h2></div>
+  <div class="dlg-body">
+    <p class="note">측정을 마치면 태블릿 안에 자동 보관됩니다. 인터넷이 없어도 남아 있고, 나중에 꺼내서 저장하거나 다시 볼 수 있습니다.</p>
+    <div class="sesslist" id="sessList"></div>
+  </div>
+  <div class="dlg-foot"><button class="btn primary" data-close>닫기</button></div>
+</dialog>
+
+<script>
+"use strict";
+/* ============================================================
+   COM-3600F 필드 콘솔
+   장비 전문 규격 (실측 데이터 90개 파일에서 역설계)
+     직렬 19200-8-N-1, 초당 1샘플
+     고정폭 14자:  [0:3] 모드태그 "M1-"   M=모드 1=레인지 -=극성
+                   [3:7] 이온수 우측정렬, "****" = 측정범위 초과
+                   [7]   기온 부호 '-' 또는 ' '
+                   [8:14] 기온 "nn.nnn"
+     종료 전문: EOF
+   ============================================================ */
+
+const $ = (s) => document.querySelector(s);
+const LS = "com3600f.v1";
+
+const state = {
+  mode: "demo",            // demo | idle | connected | measuring
+  samples: [],             // {t:Date, ion:number|null, temp:number, tag:string, raw:string}
+  target: 900,
+  startedAt: null,
+  connectedAt: null,
+  dropped: 0,
+  tag: "M1-",
+  meta: { name: "", site: "", memo: "", cmd: "" },
+  baud: 19200,
+  scale: "auto",
+};
+
+/* ---------- 저장소 ---------- */
+function loadPrefs() {
+  try {
+    const j = JSON.parse(localStorage.getItem(LS) || "{}");
+    if (j.meta) Object.assign(state.meta, j.meta);
+    if (j.target) state.target = j.target;
+    if (j.baud) state.baud = j.baud;
+    if (j.hum) $("#humIn").value = j.hum;
+    if (j.theme) document.documentElement.setAttribute("data-theme", j.theme);
+  } catch (e) { /* 저장소를 못 쓰는 환경 — 기본값으로 진행 */ }
+}
+function savePrefs() {
+  try {
+    localStorage.setItem(LS, JSON.stringify({
+      meta: state.meta, target: state.target, baud: state.baud,
+      hum: $("#humIn").value,
+      theme: document.documentElement.getAttribute("data-theme") || "",
+    }));
+  } catch (e) {}
+}
+function loadSessions() {
+  try { return JSON.parse(localStorage.getItem(LS + ".sessions") || "[]"); }
+  catch (e) { return []; }
+}
+function saveSession(sess) {
+  try {
+    const all = loadSessions();
+    all.unshift(sess);
+    localStorage.setItem(LS + ".sessions", JSON.stringify(all.slice(0, 40)));
+  } catch (e) {}
+}
+
+/* ---------- 유틸 ---------- */
+const pad = (n, w = 2) => String(n).padStart(w, "0");
+const hhmmss = (s) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(Math.floor(s) % 60)}`;
+const mmss = (s) => `${pad(Math.floor(s / 60))}:${pad(Math.floor(s) % 60)}`;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._id);
+  toast._id = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+/* ---------- 전문 파서 ---------- */
+// 고정폭 14자. 따옴표는 기존 프로그램이 파일에 쓸 때 붙인 것이라 회선에는 없지만 방어적으로 제거.
+function parseLine(line) {
+  const s = line.replace(/^"|"$/g, "").replace(/[\r\n]/g, "");
+  if (!s) return null;
+  if (s === "EOF") return { eof: true };
+  if (s[0] === "[") return { meta: s };
+  if (s.length !== 14) return { bad: s };
+  const tag = s.slice(0, 3);
+  const cnt = s.slice(3, 7);
+  const sign = s[7];
+  const tRaw = s.slice(8, 14);
+  const temp = parseFloat(tRaw);
+  if (!/^[A-Z]\d[+-]$/.test(tag) || Number.isNaN(temp)) return { bad: s };
+  const over = cnt.includes("*");
+  const ion = over ? null : parseInt(cnt, 10);
+  if (!over && Number.isNaN(ion)) return { bad: s };
+  return {
+    tag, ion, over,
+    temp: sign === "-" ? -temp : temp,
+    range: parseInt(tag[1], 10),
+    polarity: tag[2],
+    raw: s,
+  };
+}
+// 저장할 때 다시 14자 고정폭으로 되돌린다 (원본 프로그램과 바이트 단위로 같은 형태)
+function formatLine(r) {
+  const cnt = r.over ? "****" : String(r.ion).padStart(4, " ");
+  const sign = r.temp < 0 ? "-" : " ";
+  const t = Math.abs(r.temp).toFixed(3).padStart(6, " ");
+  return `${r.tag}${cnt}${sign}${t}`;
+}
+
+/* ---------- FTDI · WebUSB ---------- */
+// FT232R 계열 USB-시리얼 변환기를 브라우저에서 직접 제어한다.
+const FTDI_VID = 0x0403;
+const REQ = { RESET: 0, MODEM: 1, FLOW: 2, BAUD: 3, DATA: 4, LATENCY: 9 };
+
+function ftdiDivisor(baud) {
+  // 3 MHz 기준 클럭, 14비트 정수 + 3비트 분수
+  const divfrac = [0, 3, 2, 0, 1, 1, 2, 3];
+  const d3 = Math.round(24000000 / baud);
+  let div = (d3 >> 3) | (divfrac[d3 & 7] << 14);
+  if (div === 1) div = 0; else if (div === 0x4001) div = 1;
+  return { value: div & 0xffff, index: (div >>> 16) & 0xffff };
+}
+
+class Ftdi {
+  constructor() { this.dev = null; this.reading = false; this.pktSize = 64; }
+  get connected() { return !!this.dev && this.dev.opened; }
+
+  async open(baud) {
+    if (!navigator.usb) throw new Error("이 브라우저에서는 USB 장치를 열 수 없습니다.");
+    this.dev = await navigator.usb.requestDevice({ filters: [{ vendorId: FTDI_VID }] });
+    await this.dev.open();
+    if (!this.dev.configuration) await this.dev.selectConfiguration(1);
+    const itf = this.dev.configuration.interfaces[0];
+    await this.dev.claimInterface(itf.interfaceNumber);
+    const ep = itf.alternate.endpoints.find((e) => e.direction === "in");
+    if (ep) { this.inEp = ep.endpointNumber; this.pktSize = ep.packetSize || 64; }
+    else this.inEp = 1;
+    const out = itf.alternate.endpoints.find((e) => e.direction === "out");
+    this.outEp = out ? out.endpointNumber : 2;
+
+    const ctl = (request, value, index = 1) =>
+      this.dev.controlTransferOut({ requestType: "vendor", recipient: "device", request, value, index });
+
+    await ctl(REQ.RESET, 0);              // 회선 초기화
+    await ctl(REQ.FLOW, 0);               // 흐름제어 없음
+    const d = ftdiDivisor(baud);
+    await this.dev.controlTransferOut({ requestType: "vendor", recipient: "device", request: REQ.BAUD, value: d.value, index: d.index });
+    await ctl(REQ.DATA, 0x0008);          // 8비트, 패리티 없음, 정지비트 1
+    await ctl(REQ.MODEM, 0x0303);         // DTR·RTS 올림
+    await ctl(REQ.LATENCY, 16);
+    return this.dev.productName || "FTDI USB-시리얼";
+  }
+
+  async write(str) {
+    if (!this.connected) return;
+    await this.dev.transferOut(this.outEp, new TextEncoder().encode(str));
+  }
+
+  // 64바이트 묶음마다 앞 2바이트는 모뎀 상태 바이트라 잘라낸다.
+  async *read() {
+    this.reading = true;
+    while (this.reading && this.connected) {
+      let res;
+      try { res = await this.dev.transferIn(this.inEp, this.pktSize); }
+      catch (e) { if (this.reading) throw e; return; }
+      if (!res.data || res.data.byteLength <= 2) { await new Promise((r) => setTimeout(r, 40)); continue; }
+      const b = new Uint8Array(res.data.buffer);
+      const chunk = b.slice(2);
+      if (chunk.length) yield chunk;
+    }
+  }
+
+  async close() {
+    this.reading = false;
+    try { if (this.dev && this.dev.opened) await this.dev.close(); } catch (e) {}
+    this.dev = null;
+  }
+}
+const ftdi = new Ftdi();
+
+/* ---------- 수신 루프 ---------- */
+let lineBuf = "";
+function feed(bytes) {
+  lineBuf += new TextDecoder("ascii").decode(bytes);
+  let i;
+  while ((i = lineBuf.search(/[\r\n]/)) >= 0) {
+    const line = lineBuf.slice(0, i);
+    lineBuf = lineBuf.slice(i + 1);
+    if (line.trim()) handleLine(line);
+  }
+  // 줄바꿈을 안 보내는 장비 대비 — 14자가 차면 한 줄로 인정
+  while (lineBuf.length >= 14 && !/[\r\n]/.test(lineBuf)) {
+    handleLine(lineBuf.slice(0, 14));
+    lineBuf = lineBuf.slice(14);
+  }
+}
+
+function handleLine(line) {
+  const r = parseLine(line);
+  if (!r) return;
+  if (r.eof) { finishMeasure("장비가 EOF를 보냈습니다"); return; }
+  if (r.meta) { pushRaw(r.meta); return; }
+  if (r.bad) { state.dropped++; pushRaw(r.bad + "   ← 형식 불일치"); render(); return; }
+  r.t = new Date();
+  state.tag = r.tag;
+  if (state.mode === "measuring") {
+    state.samples.push(r);
+    if (state.samples.length >= state.target) finishMeasure("설정한 샘플 수에 도달했습니다");
+  }
+  lastLive = r;
+  pushRaw(r.raw);
+  render();
+}
+
+let lastLive = null;
+const rawLines = [];
+function pushRaw(s) {
+  rawLines.push(s);
+  if (rawLines.length > 6) rawLines.shift();
+  const box = $("#rawBox");
+  box.innerHTML = rawLines
+    .map((l, i) => i === rawLines.length - 1
+      ? `<span class="new">${esc(l)}</span>` : esc(l))
+    .join("\n");
+}
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+/* ---------- 화면 갱신 ---------- */
+function render() {
+  const r = lastLive;
+  const meter = $("#meterCard");
+  if (r) {
+    $("#ionVal").textContent = r.over ? "****" : r.ion.toLocaleString("ko-KR");
+    $("#tempVal").innerHTML = `${r.temp.toFixed(1)}<span class="unit"> ℃</span>`;
+    $("#chipTag").textContent = r.tag;
+    $("#chipPol").textContent = r.polarity === "-" ? "극성 음(−)" : "극성 양(+)";
+    $("#chipRange").textContent = `레인지 ${r.range}`;
+    $("#chipOver").hidden = !r.over;
+    meter.classList.toggle("over", !!r.over);
+    $("#sampleClock").textContent = r.t
+      ? `${pad(r.t.getHours())}:${pad(r.t.getMinutes())}:${pad(r.t.getSeconds())}` : "--:--:--";
+  }
+  const vals = state.samples.filter((s) => !s.over).map((s) => s.ion);
+  if (vals.length) {
+    const mn = Math.min(...vals), mx = Math.max(...vals);
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - avg) ** 2, 0) / vals.length);
+    $("#stMin").textContent = mn.toLocaleString("ko-KR");
+    $("#stMax").textContent = mx.toLocaleString("ko-KR");
+    $("#stAvg").textContent = Math.round(avg).toLocaleString("ko-KR");
+    $("#stSd").textContent = Math.round(sd).toLocaleString("ko-KR");
+  }
+  const n = state.samples.length;
+  $("#mCount").textContent = n.toLocaleString("ko-KR");
+  $("#mTarget").textContent = state.target.toLocaleString("ko-KR");
+  $("#mDrop").textContent = state.dropped;
+  $("#progBar").style.width = Math.min(100, (n / state.target) * 100) + "%";
+  $("#mElapsed").textContent = mmss(n);
+  $("#mLeft").textContent = mmss(Math.max(0, state.target - n));
+  drawChart();
+}
+
+function setStatus(kind, text) {
+  const p = $("#statusPill");
+  p.className = "pill" + (kind ? " " + kind : "");
+  $("#statusText").textContent = text;
+}
+
+/* ---------- 그래프 ---------- */
+const cv = $("#chart"), ctx = cv.getContext("2d");
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawChart() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  cv.width = w * dpr; cv.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const padL = 46, padR = 40, padT = 10, padB = 20;
+  const iw = w - padL - padR, ih = h - padT - padB;
+  const line = cssVar("--line"), muted = cssVar("--muted");
+  const accent = cssVar("--accent"), tempC = cssVar("--temp");
+
+  const data = state.samples.length ? state.samples : (lastLive ? [lastLive] : []);
+  const ions = data.filter((d) => !d.over).map((d) => d.ion);
+  let top = state.scale === "auto"
+    ? Math.max(500, Math.ceil((Math.max(1, ...ions) * 1.15) / 250) * 250)
+    : parseInt(state.scale, 10);
+
+  // 격자 + 좌축(음이온)
+  ctx.font = '500 10px "IBM Plex Mono", monospace';
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (ih * i) / 4;
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + iw, y + .5); ctx.stroke();
+    ctx.fillStyle = muted; ctx.textAlign = "right";
+    ctx.fillText(Math.round(top * (1 - i / 4)).toLocaleString("ko-KR"), padL - 7, y);
+  }
+  // 우축(기온)
+  const temps = data.map((d) => d.temp);
+  const tMin = temps.length ? Math.floor(Math.min(...temps) - 1) : 0;
+  const tMax = temps.length ? Math.ceil(Math.max(...temps) + 1) : 30;
+  const tSpan = Math.max(1, tMax - tMin);
+  ctx.textAlign = "left"; ctx.fillStyle = tempC;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (ih * i) / 4;
+    ctx.fillText((tMax - (tSpan * i) / 4).toFixed(0) + "°", padL + iw + 7, y);
+  }
+  if (!data.length) return;
+
+  const span = Math.max(state.target, data.length);
+  const X = (i) => padL + (iw * i) / Math.max(1, span - 1);
+
+  // 기온 곡선
+  ctx.strokeStyle = tempC; ctx.lineWidth = 1.4; ctx.beginPath();
+  data.forEach((d, i) => {
+    const y = padT + ih * (1 - (d.temp - tMin) / tSpan);
+    i ? ctx.lineTo(X(i), y) : ctx.moveTo(X(i), y);
+  });
+  ctx.stroke();
+
+  // 음이온 면적 + 곡선
+  const Y = (v) => padT + ih * (1 - Math.min(1, v / top));
+  ctx.beginPath();
+  let started = false;
+  data.forEach((d, i) => {
+    if (d.over) return;
+    const y = Y(d.ion);
+    started ? ctx.lineTo(X(i), y) : (ctx.moveTo(X(i), y), started = true);
+  });
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + ih);
+  grad.addColorStop(0, accent + "44"); grad.addColorStop(1, accent + "05");
+  ctx.save();
+  ctx.lineTo(X(data.length - 1), padT + ih); ctx.lineTo(padL, padT + ih); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath(); started = false;
+  data.forEach((d, i) => {
+    if (d.over) return;
+    const y = Y(d.ion);
+    started ? ctx.lineTo(X(i), y) : (ctx.moveTo(X(i), y), started = true);
+  });
+  ctx.strokeStyle = accent; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
+
+  // 마지막 지점 강조
+  const last = data[data.length - 1];
+  if (!last.over) {
+    const x = X(data.length - 1), y = Y(last.ion);
+    ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill();
+    ctx.strokeStyle = cssVar("--surface"); ctx.lineWidth = 1.5; ctx.stroke();
+  }
+}
+window.addEventListener("resize", drawChart);
+
+/* ---------- 데모 재생 ---------- */
+// 장비가 없어도 화면이 어떻게 동작하는지 보이도록 합성 데이터를 흘려보낸다. 실제 측정값이 아니다.
+let demoTimer = null, demoI = 0;
+function startDemo() {
+  state.mode = "demo";
+  setStatus("demo", "데모 재생 중 (합성 데이터)");
+  let temp = 12.4, base = 620;
+  demoTimer = setInterval(() => {
+    demoI++;
+    temp += (18.5 - temp) * 0.004 + (Math.random() - .5) * 0.06;
+    base += (Math.sin(demoI / 47) * 260 + 700 - base) * 0.05 + (Math.random() - .5) * 90;
+    const ion = Math.max(0, Math.round(base + Math.sin(demoI / 7) * 45));
+    const over = ion > 9990;
+    handleLine(`M1-${over ? "****" : String(ion).padStart(4, " ")}${temp < 0 ? "-" : " "}${Math.abs(temp).toFixed(3).padStart(6, " ")}`);
+    if (state.mode === "demo") { state.samples.push(lastLive); render(); }
+    if (state.samples.length > 260) stopDemo();
+  }, 120);
+}
+function stopDemo() { clearInterval(demoTimer); demoTimer = null; }
+function clearDemo() {
+  if (state.mode === "demo") { stopDemo(); state.samples = []; rawLines.length = 0; lastLive = null; demoI = 0; }
+}
+
+/* ---------- 연결 · 측정 ---------- */
+let connTimer = null;
+async function connect() {
+  if (ftdi.connected) { await disconnect(); return; }
+  try {
+    clearDemo();
+    setStatus("", "연결 중…");
+    const name = await ftdi.open(state.baud);
+    state.mode = "connected";
+    state.connectedAt = Date.now();
+    setStatus("live", `연결됨 · ${name}`);
+    $("#btnConnect").textContent = "연결 해제";
+    $("#btnStart").disabled = false;
+    rawLines.length = 0; pushRaw("회선 열림 — 장비 전송 대기 중");
+    if (state.meta.cmd) await ftdi.write(state.meta.cmd.replace(/\\r/g, "\r").replace(/\\n/g, "\n"));
+    connTimer = setInterval(() => {
+      $("#connTime").textContent = hhmmss((Date.now() - state.connectedAt) / 1000);
+    }, 1000);
+    pump();
+    toast("장비에 연결했습니다");
+  } catch (e) {
+    setStatus("", "미연결");
+    toast(e.name === "NotFoundError" ? "장치를 선택하지 않았습니다" : "연결 실패 — 진단을 확인하세요");
+    if (e.name !== "NotFoundError") console.error(e);
+  }
+}
+async function pump() {
+  try { for await (const chunk of ftdi.read()) feed(chunk); }
+  catch (e) { toast("수신이 끊겼습니다"); await disconnect(); }
+}
+async function disconnect() {
+  await ftdi.close();
+  clearInterval(connTimer);
+  state.mode = "idle";
+  setStatus("", "미연결");
+  $("#btnConnect").textContent = "장비 연결";
+  $("#btnStart").disabled = true; $("#btnStop").disabled = true;
+}
+function startMeasure() {
+  state.samples = []; state.dropped = 0; state.startedAt = new Date();
+  state.mode = "measuring";
+  $("#btnStart").disabled = true; $("#btnStop").disabled = false; $("#btnSave").disabled = true;
+  setStatus("live", "측정 중");
+  render();
+  toast(`측정을 시작했습니다 · 목표 ${state.target.toLocaleString("ko-KR")}샘플`);
+}
+function finishMeasure(why) {
+  if (state.mode !== "measuring") return;
+  state.mode = ftdi.connected ? "connected" : "idle";
+  $("#btnStart").disabled = !ftdi.connected; $("#btnStop").disabled = true;
+  $("#btnSave").disabled = state.samples.length === 0;
+  setStatus(ftdi.connected ? "live" : "", ftdi.connected ? "연결됨 · 측정 완료" : "측정 완료");
+  if (state.samples.length) {
+    saveSession({
+      id: Date.now(),
+      started: state.startedAt ? state.startedAt.toISOString() : new Date().toISOString(),
+      n: state.samples.length,
+      site: state.meta.site, name: state.meta.name,
+      hum: $("#humIn").value,
+      lines: state.samples.map(formatLine),
+    });
+  }
+  toast(why || "측정을 마쳤습니다");
+}
+
+/* ---------- 파일 만들기 ---------- */
+function fileStamp(d) {
+  return `${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+function buildRaw() {
+  const d = state.startedAt || new Date();
+  const ondo = state.samples.length ? state.samples[state.samples.length - 1].temp.toFixed(1) : "0.0";
+  const situdo = ($("#humIn").value || "0").replace(/\D/g, "") || "0";
+  const head = `"[Date=${String(d.getFullYear()).slice(2)}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} Time=${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} cdev=0 pWide=0 cBgn=0 xBgn=0]"`;
+  const foot = `"[ondo=${ondo} situdo=${situdo} ampm=${state.tag} wCnt=${state.samples.length}]"`;
+  return [head, ...state.samples.map((s) => `"${formatLine(s)}"`), foot].join("\r\n") + "\r\n";
+}
+function buildCsv() {
+  const rows = [["순번", "시각", "음이온(개/cm³)", "기온(℃)", "모드", "비고"]];
+  state.samples.forEach((s, i) => rows.push([
+    i + 1,
+    s.t ? `${pad(s.t.getHours())}:${pad(s.t.getMinutes())}:${pad(s.t.getSeconds())}` : "",
+    s.over ? "" : s.ion, s.temp.toFixed(3), s.tag, s.over ? "측정범위 초과" : "",
+  ]));
+  return "﻿" + rows.map((r) => r.join(",")).join("\r\n") + "\r\n";
+}
+function buildReport() {
+  const d = state.startedAt || new Date();
+  const day = `${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const end = new Date(d.getTime() + state.samples.length * 1000);
+  const endS = `${end.getHours()}${pad(end.getMinutes())}${pad(end.getSeconds())}`;
+  const situdo = ($("#humIn").value || "0").replace(/\D/g, "") || "0";
+  const tail = `[ondo=${state.samples.length ? state.samples[state.samples.length - 1].temp.toFixed(1) : "0"} situdo=${situdo} ampm=${state.tag} wCnt=${state.samples.length}]`;
+  const rows = [["조사일자", "조사자명", "조사종료시간", "음이온발생량", "기온", "비고"].join("\t")];
+  state.samples.forEach((s) => rows.push([
+    day + " ", state.meta.name || state.meta.site || "", endS,
+    s.over ? "" : s.ion, s.temp.toFixed(3), tail,
+  ].join("\t")));
+  return "﻿" + rows.join("\r\n") + "\r\n";
+}
+
+async function download(filename, text) {
+  const dl = await claudeCap("downloads");
+  if (dl) {
+    try { await dl.save({ filename, data: text }); toast("저장했습니다"); return; }
+    catch (e) {
+      if (e && e.code === "declined") { toast("저장을 취소했습니다"); return; }
+      // 저장 기능을 못 쓰는 경우 아래 방식으로 넘어간다
+    }
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast("저장했습니다");
+  } catch (e) { toast("이 화면에서는 파일을 저장할 수 없습니다 — 진단을 확인하세요"); }
+}
+let capCache = {};
+async function claudeCap(name) {
+  if (name in capCache) return capCache[name];
+  try { capCache[name] = window.claude && window.claude.use ? await window.claude.use(name) : null; }
+  catch (e) { capCache[name] = null; }
+  return capCache[name];
+}
+
+/* ---------- 파일 열기 ---------- */
+$("#btnOpen").addEventListener("click", () => $("#fileIn").click());
+$("#fileIn").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const buf = await f.arrayBuffer();
+  let txt;
+  try { txt = new TextDecoder("euc-kr").decode(buf); }
+  catch (err) { txt = new TextDecoder("utf-8").decode(buf); }
+  clearDemo(); stopDemo();
+  state.samples = []; rawLines.length = 0; state.dropped = 0; lastLive = null;
+  const lines = txt.split(/\r?\n/);
+  let base = null;
+  const m = f.name.match(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\.txt$/i);
+  if (m) base = new Date(2000 + +m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  for (const raw of lines) {
+    // 한글 표 형식이면 탭으로 나뉜 4·5번째 칸이 음이온·기온
+    if (raw.includes("\t")) {
+      const c = raw.split("\t");
+      if (c.length >= 5 && /^\d+$/.test(c[3].trim())) {
+        state.samples.push({ tag: "M1-", ion: +c[3], over: false, temp: parseFloat(c[4]) || 0, range: 1, polarity: "-", raw: "" });
+      }
+      continue;
+    }
+    const r = parseLine(raw);
+    if (r && r.tag) { state.samples.push(r); }
+    else if (r && r.meta) {
+      const hm = r.meta.match(/situdo=(\d+)/);
+      if (hm) $("#humIn").value = hm[1];
+    }
+  }
+  if (!state.samples.length) { toast("이 파일에서 측정값을 찾지 못했습니다"); return; }
+  state.samples.forEach((s, i) => { if (base) s.t = new Date(base.getTime() + i * 1000); });
+  state.startedAt = base || new Date();
+  state.target = Math.max(state.target, state.samples.length);
+  state.tag = state.samples[0].tag;
+  lastLive = state.samples[state.samples.length - 1];
+  state.mode = ftdi.connected ? "connected" : "idle";
+  setStatus("", `파일 열람 · ${f.name}`);
+  $("#btnSave").disabled = false;
+  pushRaw(`${f.name} — ${state.samples.length.toLocaleString("ko-KR")}개 측정값을 읽었습니다`);
+  render();
+  toast(`${state.samples.length.toLocaleString("ko-KR")}개 측정값을 불러왔습니다`);
+  e.target.value = "";
+});
+
+/* ---------- 대화상자 ---------- */
+document.querySelectorAll("[data-close]").forEach((b) =>
+  b.addEventListener("click", () => b.closest("dialog").close()));
+
+$("#btnSetup").addEventListener("click", () => {
+  $("#setCount").value = state.target;
+  $("#setBaud").value = String(state.baud);
+  $("#setName").value = state.meta.name;
+  $("#setSite").value = state.meta.site;
+  $("#setMemo").value = state.meta.memo;
+  $("#setCmd").value = state.meta.cmd;
+  $("#dlgSetup").showModal();
+});
+$("#setupSave").addEventListener("click", () => {
+  state.target = Math.max(1, parseInt($("#setCount").value, 10) || 900);
+  state.baud = parseInt($("#setBaud").value, 10) || 19200;
+  state.meta.name = $("#setName").value.trim();
+  state.meta.site = $("#setSite").value.trim();
+  state.meta.memo = $("#setMemo").value.trim();
+  state.meta.cmd = $("#setCmd").value.trim();
+  savePrefs(); render(); $("#dlgSetup").close();
+  toast("설정을 적용했습니다");
+});
+
+$("#btnSave").addEventListener("click", () => {
+  const vals = state.samples.filter((s) => !s.over).map((s) => s.ion);
+  const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  $("#saveSummary").innerHTML = `
+    <div><span>측정 샘플</span><b>${state.samples.length.toLocaleString("ko-KR")}개</b></div>
+    <div><span>평균 음이온</span><b>${avg.toLocaleString("ko-KR")} 개/cm³</b></div>
+    <div><span>측정범위 초과</span><b>${state.samples.filter((s) => s.over).length}개</b></div>
+    <div><span>파일명</span><b>${fileStamp(state.startedAt || new Date())}.txt</b></div>`;
+  updateSaveNote();
+  $("#dlgSave").showModal();
+});
+function updateSaveNote() {
+  const v = $("#saveFmt").value;
+  $("#saveNote").textContent = v === "raw"
+    ? "기존 노트북 프로그램이 만들던 파일과 글자 하나까지 같은 형식입니다. 헤더·본문·꼬리말 모두 포함되어 기존 분석 절차를 그대로 쓸 수 있습니다."
+    : v === "csv"
+      ? "순번·시각·음이온·기온을 표로 저장합니다. 엑셀에서 바로 열립니다."
+      : "조사일자·조사자명·조사종료시간·음이온발생량·기온·비고 6칸 한글 표입니다. 기존 가공 파일과 같은 구성입니다.";
+}
+$("#saveFmt").addEventListener("change", updateSaveNote);
+$("#doSave").addEventListener("click", async () => {
+  const stamp = fileStamp(state.startedAt || new Date());
+  const v = $("#saveFmt").value;
+  if (v === "raw") await download(`${stamp}.txt`, buildRaw());
+  else if (v === "csv") await download(`${stamp}.csv`, buildCsv());
+  else await download(`${stamp}_리포트.txt`, buildReport());
+  $("#dlgSave").close();
+});
+
+$("#btnDiag").addEventListener("click", async () => {
+  const usb = !!navigator.usb;
+  const sec = window.isSecureContext;
+  const dl = await claudeCap("downloads");
+  let granted = 0;
+  if (usb) { try { granted = (await navigator.usb.getDevices()).length; } catch (e) {} }
+  const row = (k, ok, v) => `<div><span>${k}</span><b class="${ok ? "ok" : "no"}">${v}</b></div>`;
+  $("#diagList").innerHTML =
+    row("USB 장치 접근 (WebUSB)", usb, usb ? "사용 가능" : "차단됨") +
+    row("보안 컨텍스트 (HTTPS)", sec, sec ? "정상" : "아님") +
+    row("허용된 장치", granted > 0, granted > 0 ? `${granted}개 기억됨` : "없음") +
+    row("파일 저장", true, dl ? "클로드 저장 기능" : "브라우저 내려받기") +
+    row("장비 연결", ftdi.connected, ftdi.connected ? "연결됨" : "미연결") +
+    row("브라우저", /Chrome|Edg/.test(navigator.userAgent), navigator.userAgent.includes("Chrome") ? "크롬 계열" : "크롬이 아님");
+  $("#diagHint").innerHTML = usb
+    ? "USB 접근이 열려 있습니다. 변환 케이블을 USB-C 젠더로 연결한 뒤 <b>장비 연결</b>을 누르고 목록에서 FTDI 장치를 고르세요."
+    : "이 화면에서는 USB 접근이 막혀 있습니다. 페이지 주소를 크롬 <b>새 탭에서 직접</b> 열면 대개 풀립니다. 안드로이드 크롬이어야 하고, 주소가 https 여야 합니다.";
+  $("#dlgDiag").showModal();
+});
+
+$("#btnSess").addEventListener("click", () => {
+  const all = loadSessions();
+  $("#sessList").innerHTML = all.length
+    ? all.map((s) => {
+      const d = new Date(s.started);
+      return `<div class="sess"><div class="meta">
+        <b>${fileStamp(d)}.txt</b>
+        <span>${s.n.toLocaleString("ko-KR")}샘플 · ${s.site || s.name || "장소 미기입"} · 습도 ${s.hum || "-"}%</span>
+      </div><button class="mini" data-sess="${s.id}">내려받기</button></div>`;
+    }).join("")
+    : `<p class="note">아직 보관된 측정이 없습니다.</p>`;
+  $("#dlgSess").showModal();
+});
+$("#sessList").addEventListener("click", async (e) => {
+  const id = e.target.getAttribute("data-sess");
+  if (!id) return;
+  const s = loadSessions().find((x) => String(x.id) === id);
+  if (!s) return;
+  const d = new Date(s.started);
+  const head = `"[Date=${String(d.getFullYear()).slice(2)}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} Time=${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} cdev=0 pWide=0 cBgn=0 xBgn=0]"`;
+  const foot = `"[ondo=0.0 situdo=${s.hum || 0} ampm=M1- wCnt=${s.n}]"`;
+  await download(`${fileStamp(d)}.txt`, [head, ...s.lines.map((l) => `"${l}"`), foot].join("\r\n") + "\r\n");
+});
+
+/* ---------- 버튼 ---------- */
+$("#btnConnect").addEventListener("click", connect);
+$("#btnStart").addEventListener("click", startMeasure);
+$("#btnStop").addEventListener("click", () => finishMeasure("측정을 정지했습니다"));
+$("#scaleSel").addEventListener("change", (e) => { state.scale = e.target.value; drawChart(); });
+$("#humIn").addEventListener("change", savePrefs);
+$("#btnTheme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : cur === "light" ? "" : "dark";
+  if (next) document.documentElement.setAttribute("data-theme", next);
+  else document.documentElement.removeAttribute("data-theme");
+  savePrefs(); drawChart();
+});
+if (navigator.usb) {
+  navigator.usb.addEventListener("disconnect", () => { if (ftdi.connected) disconnect(); });
+}
+
+/* ---------- 시작 ---------- */
+loadPrefs();
+render();
+startDemo();
+</script>
